@@ -57,12 +57,18 @@ func Register(s *mcp.Server) {
 	add(s, "swipe",
 		"Swipe/drag from a start point to an end point. Params: x1,y1 (start) and x2,y2 (end) in true device pixels — x and y are accepted aliases for x1 and y1. To SCROLL DOWN a list, swipe from a HIGH y to a LOW y (drag the content up); reverse to scroll up. A longer duration_ms gives a slower, controlled drag; a short one flings.",
 		swipe)
+	add(s, "drag",
+		"Press-hold-move-release drag from (x1,y1) to (x2,y2) in true device pixels (input draganddrop, Android 11+). Unlike swipe (which flings), this holds at the start first — use it for drag handles, long-press-to-reorder lists, and drag-and-drop targets a quick swipe skips.",
+		drag)
 	add(s, "input_text",
 		"Type text into the currently focused input field via the IME. Tap the field first so it has focus. Afterwards the soft keyboard may cover buttons lower on screen — dismiss it with press_key escape (or back) before tapping them. For native non-IME PIN pads this does nothing; use enter_pin instead.",
 		inputText)
 	add(s, "press_key",
 		"Press a hardware/navigation key by name (enter, back, home, menu, tab, del, escape, up, down, left, right, dpad_center, app_switch, search, power, volume_up, volume_down, ...) or a raw Android keycode number. Handy to submit a form (enter), dismiss the keyboard (escape), or go back (back).",
 		pressKey)
+	add(s, "input_key_combo",
+		"Press several keys together as a chord (input keycombination, Android 11+), e.g. keys=[\"ctrl\",\"a\"] to select-all or [\"alt\",\"tab\"] to switch. List modifier(s) first, then the action key; each is a key name (ctrl/alt/shift/meta, a-z, enter, tab, ...) or a raw keycode. For a single key use press_key instead.",
+		inputKeyCombo)
 	add(s, "long_press",
 		"Press and hold a coordinate (true device pixels) for a duration — for context menus, drag handles, and long-press actions.",
 		longPress)
@@ -151,6 +157,9 @@ func Register(s *mcp.Server) {
 	add(s, "set_location",
 		"Set the emulator's mock GPS location (longitude, latitude) — for location-gated features.",
 		setLocation)
+	add(s, "set_status_bar",
+		"Pin a clean status bar via SystemUI demo mode (enabled=true) — fixed clock, full signal, chosen battery, no notification icons — so screenshots for docs don't leak the wall clock or a random signal state. Optionally set clock (HHMM) and battery (0-100). Call with enabled=false to restore the live bar.",
+		setStatusBar)
 	add(s, "doctor",
 		"Diagnose the local Android tooling: SDK path, adb/emulator availability, known AVDs, and attached devices. Run this first when something isn't working.",
 		doctor)

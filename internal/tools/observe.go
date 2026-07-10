@@ -14,7 +14,7 @@ import (
 
 type screenshotArgs struct {
 	serialArg
-	MaxDim int `json:"max_dim,omitempty" jsonschema:"Max width/height of the returned image in pixels. Default 760, 0 = no downscale."`
+	MaxDim *int `json:"max_dim,omitempty" jsonschema:"Max width/height of the returned image in pixels. Omit for the default 760; pass 0 (or a negative) to disable downscaling and get the full-resolution image."`
 }
 
 type waitForTextArgs struct {
@@ -31,9 +31,9 @@ func screenshot(ctx context.Context, in screenshotArgs) (*mcp.CallToolResult, er
 	if err != nil {
 		return nil, err
 	}
-	maxDim := in.MaxDim
-	if maxDim == 0 {
-		maxDim = 760
+	maxDim := 760 // default when omitted; an explicit 0/negative disables downscaling
+	if in.MaxDim != nil {
+		maxDim = *in.MaxDim
 	}
 	png, w, h, err := android.Screenshot(ctx, serial, maxDim)
 	if err != nil {

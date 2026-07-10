@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 // sdkRoot resolves the Android SDK location, checking the standard environment
@@ -66,9 +67,13 @@ func commandEnv() []string {
 	}
 	extra := filepath.Join(root, "platform-tools") + string(os.PathListSeparator) +
 		filepath.Join(root, "emulator")
+	// Match the PATH key case-insensitively: on Windows it is typically "Path",
+	// and env keys are case-insensitive there — appending a second "PATH=" would
+	// clobber the system path (Go dedupes env case-insensitively on Windows).
+	// Preserve the original key and value so nothing is lost.
 	for i, kv := range env {
-		if len(kv) >= 5 && kv[:5] == "PATH=" {
-			env[i] = "PATH=" + extra + string(os.PathListSeparator) + kv[5:]
+		if key, val, found := strings.Cut(kv, "="); found && strings.EqualFold(key, "PATH") {
+			env[i] = key + "=" + extra + string(os.PathListSeparator) + val
 			return env
 		}
 	}

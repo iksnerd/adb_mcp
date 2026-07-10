@@ -26,7 +26,11 @@ func downscalePNG(data []byte, maxDim int) (out []byte, w, h int) {
 	dw := max(1, int(float64(sw)*scale))
 	dh := max(1, int(float64(sh)*scale))
 
-	dst := image.NewNRGBA(image.Rect(0, 0, dw, dh))
+	// RGBA (like the values RGBA() returns) is alpha-premultiplied, so averaging
+	// the samples and storing them here keeps the color space consistent. (For
+	// the opaque screenshots this handles it makes no difference, but it is the
+	// correct model should a translucent PNG ever be passed in.)
+	dst := image.NewRGBA(image.Rect(0, 0, dw, dh))
 	for dy := 0; dy < dh; dy++ {
 		sy0 := b.Min.Y + dy*sh/dh
 		sy1 := b.Min.Y + (dy+1)*sh/dh
@@ -53,7 +57,7 @@ func downscalePNG(data []byte, maxDim int) (out []byte, w, h int) {
 			if n == 0 {
 				n = 1
 			}
-			dst.SetNRGBA(dx, dy, color.NRGBA{
+			dst.SetRGBA(dx, dy, color.RGBA{
 				R: uint8((r / n) >> 8),
 				G: uint8((g / n) >> 8),
 				B: uint8((bl / n) >> 8),

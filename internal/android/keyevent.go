@@ -34,6 +34,28 @@ var keyCodes = map[string]int{
 	"search":       84,
 	"app_switch":   187, // recent apps
 	"notification": 83,
+
+	// Modifiers — useful as the first key(s) of an input_key_combo chord.
+	"ctrl":        113, // ctrl_left
+	"ctrl_left":   113,
+	"ctrl_right":  114,
+	"alt":         57, // alt_left
+	"alt_left":    57,
+	"alt_right":   58,
+	"shift":       59, // shift_left
+	"shift_left":  59,
+	"shift_right": 60,
+	"meta":        117, // meta_left (Windows/Command)
+	"meta_left":   117,
+	"meta_right":  118,
+	"caps_lock":   115,
+
+	// Letters — handy as the action key in a chord (e.g. ctrl+a).
+	"a": 29, "b": 30, "c": 31, "d": 32, "e": 33, "f": 34,
+	"g": 35, "h": 36, "i": 37, "j": 38, "k": 39, "l": 40,
+	"m": 41, "n": 42, "o": 43, "p": 44, "q": 45, "r": 46,
+	"s": 47, "t": 48, "u": 49, "v": 50, "w": 51, "x": 52,
+	"y": 53, "z": 54,
 }
 
 // ResolveKey converts a named key (case-insensitive) or a raw integer keycode

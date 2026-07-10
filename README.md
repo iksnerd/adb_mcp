@@ -90,8 +90,10 @@ single device is attached; with several, pass one from `list_devices`.
 | `long_press` | Press and hold `(x,y)` for a duration |
 | `wait_for_text` | Poll until a label appears, then return its tappable center |
 | `swipe` | Swipe/drag (scroll down = high y → low y); `x`/`y` alias `x1`/`y1` |
+| `drag` | Press-hold-move-release drag (`draganddrop`) — for drag handles & reorder |
 | `input_text` | Type into the focused field via the IME |
 | `press_key` | Press a named key (`enter`,`back`,`home`,`escape`,…) or raw keycode |
+| `input_key_combo` | Press a chord together, e.g. `["ctrl","a"]`, `["alt","tab"]` |
 | `enter_pin` | Enter digits on a PIN pad — with `grid`/`coords` for canvas-drawn pads |
 
 ### Device lock / Keystore
@@ -125,14 +127,15 @@ single device is attached; with several, pass one from `list_devices`.
 |---|---|
 | `set_dark_mode` | Toggle the system dark theme |
 | `set_location` | Set the mock GPS location |
+| `set_status_bar` | Pin a clean status bar (SystemUI demo mode) for tidy screenshots |
 | `doctor` | Report SDK/adb/emulator/AVD/device health |
 
 ### Build & test (Gradle)
 | Tool | Purpose |
 |---|---|
 | `gradle_build` | `./gradlew assembleDebug` (or a given task) → APK path |
-| `run_unit_tests` | `./gradlew test` |
-| `run_instrumented_tests` | `./gradlew connectedAndroidTest` (needs a device) |
+| `run_unit_tests` | `./gradlew test` → structured pass/fail/skip summary + failing tests |
+| `run_instrumented_tests` | `./gradlew connectedAndroidTest` (needs a device) → same summary |
 | `list_gradle_tasks` | Discover available Gradle tasks |
 
 ## Resources (the bundled "skill")

@@ -95,6 +95,31 @@ func StopLogcatCapture(serial, filter string) (string, error) {
 	return strings.TrimRight(strings.Join(kept, "\n"), "\n"), nil
 }
 
+// StopAllCaptures tears down every running logcat/screen-record session,
+// killing the detached adb client processes and removing the logcat temp files.
+// Call it on server shutdown so an interrupted session does not leak an adb
+// process or a /tmp file. (On-device artifacts from an interrupted screen
+// recording are left as-is; a clean stop_screen_record removes them.)
+func StopAllCaptures() {
+	logMu.Lock()
+	for serial, s := range logSessions {
+		_ = s.cmd.Process.Kill()
+		_, _ = s.cmd.Process.Wait()
+		s.file.Close()
+		os.Remove(s.path)
+		delete(logSessions, serial)
+	}
+	logMu.Unlock()
+
+	recMu.Lock()
+	for serial, s := range recSessions {
+		_ = s.cmd.Process.Kill()
+		_, _ = s.cmd.Process.Wait()
+		delete(recSessions, serial)
+	}
+	recMu.Unlock()
+}
+
 type recordSession struct {
 	cmd        *exec.Cmd
 	devicePath string

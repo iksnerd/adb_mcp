@@ -36,6 +36,20 @@ type swipeArgs struct {
 	DurationMS int  `json:"duration_ms,omitempty" jsonschema:"Swipe duration in ms. Default 300."`
 }
 
+type dragArgs struct {
+	serialArg
+	X1         int `json:"x1" jsonschema:"Start X in true device pixels."`
+	Y1         int `json:"y1" jsonschema:"Start Y in true device pixels."`
+	X2         int `json:"x2" jsonschema:"End X in true device pixels."`
+	Y2         int `json:"y2" jsonschema:"End Y in true device pixels."`
+	DurationMS int `json:"duration_ms,omitempty" jsonschema:"Drag duration in ms. Default 400."`
+}
+
+type keyComboArgs struct {
+	serialArg
+	Keys []string `json:"keys" jsonschema:"Keys to press together, modifier(s) first, e.g. [\"ctrl\",\"a\"] or [\"alt\",\"tab\"]. Each is a key name (ctrl, alt, shift, meta, a-z, enter, tab, ...) or a raw keycode number. Needs at least 2."`
+}
+
 type inputTextArgs struct {
 	serialArg
 	Text string `json:"text" jsonschema:"Text to type into the focused field."`
@@ -117,6 +131,39 @@ func swipe(ctx context.Context, in swipeArgs) (*mcp.CallToolResult, error) {
 		return nil, err
 	}
 	return text("Swiped (%d,%d)->(%d,%d).", *x1, *y1, *in.X2, *in.Y2), nil
+}
+
+func drag(ctx context.Context, in dragArgs) (*mcp.CallToolResult, error) {
+	serial, err := resolve(ctx, in.Serial)
+	if err != nil {
+		return nil, err
+	}
+	if err := android.Drag(ctx, serial, in.X1, in.Y1, in.X2, in.Y2, in.DurationMS); err != nil {
+		return nil, err
+	}
+	return text("Dragged (%d,%d)->(%d,%d).", in.X1, in.Y1, in.X2, in.Y2), nil
+}
+
+func inputKeyCombo(ctx context.Context, in keyComboArgs) (*mcp.CallToolResult, error) {
+	serial, err := resolve(ctx, in.Serial)
+	if err != nil {
+		return nil, err
+	}
+	if len(in.Keys) < 2 {
+		return nil, fmt.Errorf("a key combination needs at least 2 keys, e.g. [\"ctrl\",\"a\"]")
+	}
+	codes := make([]int, 0, len(in.Keys))
+	for _, k := range in.Keys {
+		code, err := android.ResolveKey(k)
+		if err != nil {
+			return nil, err
+		}
+		codes = append(codes, code)
+	}
+	if err := android.KeyCombo(ctx, serial, codes); err != nil {
+		return nil, err
+	}
+	return text("Pressed %s together.", strings.Join(in.Keys, "+")), nil
 }
 
 func inputText(ctx context.Context, in inputTextArgs) (*mcp.CallToolResult, error) {

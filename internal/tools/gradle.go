@@ -51,8 +51,19 @@ func runGradleReporting(ctx context.Context, in gradleArgs, defaultTask string) 
 		task = defaultTask
 	}
 	out, err := android.Gradle(ctx, in.ProjectDir, append([]string{task}, in.Args...)...)
+	// Parse the JUnit XML regardless of exit code: a non-zero Gradle exit is
+	// exactly when the per-test breakdown (which tests failed and why) is most
+	// useful, so surface it in both the success and failure paths.
+	summary, found := android.ParseTestResults(in.ProjectDir)
 	if err != nil {
-		return nil, fmt.Errorf("%v\n%s", err, tailLines(out, 60))
+		msg := fmt.Sprintf("%v", err)
+		if found {
+			msg += "\n\n" + summary.String()
+		}
+		return nil, fmt.Errorf("%s\n\n%s", msg, tailLines(out, 60))
+	}
+	if found {
+		return text("Tests passed (%s).\n\n%s\n\n%s", task, summary.String(), tailLines(out, 20)), nil
 	}
 	return text("Tests passed (%s).\n\n%s", task, tailLines(out, 30)), nil
 }

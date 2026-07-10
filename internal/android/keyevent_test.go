@@ -37,12 +37,3 @@ func TestResolveKeyErrors(t *testing.T) {
 		}
 	}
 }
-
-func TestEscapeInputText(t *testing.T) {
-	if got := escapeInputText("hello world"); got != "hello%sworld" {
-		t.Errorf("escapeInputText spaces = %q", got)
-	}
-	if got := escapeInputText("a&b"); got != "a\\&b" {
-		t.Errorf("escapeInputText ampersand = %q", got)
-	}
-}

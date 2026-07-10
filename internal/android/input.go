@@ -24,6 +24,34 @@ func Swipe(ctx context.Context, serial string, x1, y1, x2, y2, durationMS int) e
 	return err
 }
 
+// Drag performs a press-hold-move-release drag from (x1,y1) to (x2,y2) using
+// `input draganddrop` (Android 11+). Unlike Swipe — which flings — this holds at
+// the start point first, so it triggers drag handles, reorder-on-long-press
+// lists, and drag-and-drop targets that a quick swipe skips over.
+func Drag(ctx context.Context, serial string, x1, y1, x2, y2, durationMS int) error {
+	if durationMS <= 0 {
+		durationMS = 400
+	}
+	_, err := runAdb(ctx, serial, "shell", "input", "draganddrop",
+		strconv.Itoa(x1), strconv.Itoa(y1), strconv.Itoa(x2), strconv.Itoa(y2), strconv.Itoa(durationMS))
+	return err
+}
+
+// KeyCombo presses several keycodes together as a chord via
+// `input keycombination` (Android 11+), e.g. ctrl+a or alt+tab. Order matters:
+// list the modifier(s) first, then the action key.
+func KeyCombo(ctx context.Context, serial string, codes []int) error {
+	if len(codes) < 2 {
+		return fmt.Errorf("a key combination needs at least 2 keys")
+	}
+	args := []string{"shell", "input", "keycombination"}
+	for _, c := range codes {
+		args = append(args, strconv.Itoa(c))
+	}
+	_, err := runAdb(ctx, serial, args...)
+	return err
+}
+
 // LongPress presses and holds a point by issuing a same-point swipe with a long
 // duration (Android has no dedicated long-press input verb).
 func LongPress(ctx context.Context, serial string, x, y, durationMS int) error {
@@ -35,27 +63,21 @@ func LongPress(ctx context.Context, serial string, x, y, durationMS int) error {
 	return err
 }
 
-// InputText types text via the IME. Spaces are escaped for `input text`.
+// InputText types text via the IME. The text is quoted for the device shell so
+// spaces and metacharacters survive intact (see escapeInputText).
 func InputText(ctx context.Context, serial, text string) error {
 	_, err := runAdb(ctx, serial, "shell", "input", "text", escapeInputText(text))
 	return err
 }
 
-// escapeInputText encodes a string for `adb shell input text`, which treats
-// spaces as argument separators and chokes on several shell metacharacters.
+// escapeInputText prepares text for `adb shell input text`. The argument is
+// interpreted by the device shell before `input` sees it, so a bare string with
+// spaces or metacharacters ($, backtick, quotes, &, ;, |, <, >, parens, ?, ...)
+// would be split or mangled. Wrapping the whole string in single quotes
+// neutralises all of them at once; an embedded single quote is emitted as the
+// standard '\” sequence (close-quote, escaped quote, reopen-quote).
 func escapeInputText(s string) string {
-	replacer := strings.NewReplacer(
-		" ", "%s",
-		"&", "\\&",
-		"<", "\\<",
-		">", "\\>",
-		"?", "\\?",
-		"|", "\\|",
-		";", "\\;",
-		"(", "\\(",
-		")", "\\)",
-	)
-	return replacer.Replace(s)
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
 // PressKey sends a keyevent by resolved code.

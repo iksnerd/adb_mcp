@@ -88,7 +88,14 @@ func BootEmulator(ctx context.Context, avd string, noSnapshot, waitForBoot, wipe
 	if !waitForBoot {
 		return serial, nil
 	}
-	if err := WaitForBoot(ctx, serial, deadline.Sub(time.Now())); err != nil {
+	// Spend only the time left in the overall budget. A non-positive remainder
+	// means discovery already ate the whole timeout — don't hand WaitForBoot a
+	// value <= 0, which it would silently treat as its own 120s default.
+	remaining := time.Until(deadline)
+	if remaining <= 0 {
+		return serial, fmt.Errorf("emulator %q appeared as %s but did not finish booting within %s", avd, serial, timeout)
+	}
+	if err := WaitForBoot(ctx, serial, remaining); err != nil {
 		return serial, err
 	}
 	return serial, nil

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "android": {
+      "command": "android-emulator-mcp",
+      "args": [],
+      "env": {}
+    }
+  }
+}

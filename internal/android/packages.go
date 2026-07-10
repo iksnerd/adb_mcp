@@ -1,0 +1,116 @@
+package android
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"regexp"
+	"strings"
+)
+
+// ListPackages lists installed package names, optionally filtered by substring.
+func ListPackages(ctx context.Context, serial, filter string) ([]string, error) {
+	args := []string{"shell", "pm", "list", "packages"}
+	out, err := runAdb(ctx, serial, args...)
+	if err != nil {
+		return nil, err
+	}
+	needle := strings.ToLower(strings.TrimSpace(filter))
+	var pkgs []string
+	for _, line := range strings.Split(out, "\n") {
+		pkg := strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(line), "package:"))
+		if pkg == "" {
+			continue
+		}
+		if needle != "" && !strings.Contains(strings.ToLower(pkg), needle) {
+			continue
+		}
+		pkgs = append(pkgs, pkg)
+	}
+	return pkgs, nil
+}
+
+// InstallApp installs (or reinstalls, -r) an APK from a local path.
+func InstallApp(ctx context.Context, serial, apkPath string) (string, error) {
+	if _, err := os.Stat(apkPath); err != nil {
+		return "", fmt.Errorf("apk not found: %s", apkPath)
+	}
+	return runAdb(ctx, serial, "install", "-r", apkPath)
+}
+
+// UninstallApp removes an app by package name.
+func UninstallApp(ctx context.Context, serial, pkg string) (string, error) {
+	return runAdb(ctx, serial, "uninstall", pkg)
+}
+
+// LaunchApp starts an app's launcher activity via monkey.
+func LaunchApp(ctx context.Context, serial, pkg string) error {
+	_, err := runAdb(ctx, serial, "shell", "monkey", "-p", pkg,
+		"-c", "android.intent.category.LAUNCHER", "1")
+	return err
+}
+
+// StopApp force-stops an app.
+func StopApp(ctx context.Context, serial, pkg string) error {
+	_, err := runAdb(ctx, serial, "shell", "am", "force-stop", pkg)
+	return err
+}
+
+// ClearAppData wipes an app's data/cache, returning it to a first-launch state.
+func ClearAppData(ctx context.Context, serial, pkg string) (string, error) {
+	return runAdb(ctx, serial, "shell", "pm", "clear", pkg)
+}
+
+// OpenURL opens a URL or deep link via an ACTION_VIEW intent. When pkg is set
+// the intent is targeted at that package.
+func OpenURL(ctx context.Context, serial, url, pkg string) (string, error) {
+	args := []string{"shell", "am", "start", "-a", "android.intent.action.VIEW", "-d", url}
+	if strings.TrimSpace(pkg) != "" {
+		args = append(args, pkg)
+	}
+	return runAdb(ctx, serial, args...)
+}
+
+// AppDetails is a compact summary of an installed package.
+type AppDetails struct {
+	Package          string `json:"package"`
+	Installed        bool   `json:"installed"`
+	VersionName      string `json:"version_name,omitempty"`
+	VersionCode      string `json:"version_code,omitempty"`
+	LauncherActivity string `json:"launcher_activity,omitempty"`
+}
+
+var (
+	versionNameRe = regexp.MustCompile(`versionName=(\S+)`)
+	versionCodeRe = regexp.MustCompile(`versionCode=(\d+)`)
+)
+
+// GetAppDetails reports an app's version and launchable activity via
+// `dumpsys package` + `cmd package resolve-activity`.
+func GetAppDetails(ctx context.Context, serial, pkg string) (AppDetails, error) {
+	d := AppDetails{Package: pkg}
+	dump, err := runAdb(ctx, serial, "shell", "dumpsys", "package", pkg)
+	if err != nil {
+		return d, err
+	}
+	if !strings.Contains(dump, "Unable to find package") && strings.Contains(dump, "Package [") {
+		d.Installed = true
+	}
+	if m := versionNameRe.FindStringSubmatch(dump); m != nil {
+		d.VersionName = m[1]
+	}
+	if m := versionCodeRe.FindStringSubmatch(dump); m != nil {
+		d.VersionCode = m[1]
+	}
+	// Best-effort launcher activity.
+	if res, err := runAdb(ctx, serial, "shell", "cmd", "package", "resolve-activity",
+		"--brief", "-c", "android.intent.category.LAUNCHER", pkg); err == nil {
+		for _, line := range strings.Split(res, "\n") {
+			line = strings.TrimSpace(line)
+			if strings.Contains(line, "/") && !strings.Contains(line, " ") {
+				d.LauncherActivity = line
+			}
+		}
+	}
+	return d, nil
+}

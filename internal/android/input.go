@@ -1,0 +1,143 @@
+package android
+
+import (
+	"context"
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// Tap taps a coordinate in true device pixels.
+func Tap(ctx context.Context, serial string, x, y int) error {
+	_, err := runAdb(ctx, serial, "shell", "input", "tap", strconv.Itoa(x), strconv.Itoa(y))
+	return err
+}
+
+// Swipe drags from (x1,y1) to (x2,y2) over durationMS milliseconds.
+func Swipe(ctx context.Context, serial string, x1, y1, x2, y2, durationMS int) error {
+	if durationMS <= 0 {
+		durationMS = 300
+	}
+	_, err := runAdb(ctx, serial, "shell", "input", "swipe",
+		strconv.Itoa(x1), strconv.Itoa(y1), strconv.Itoa(x2), strconv.Itoa(y2), strconv.Itoa(durationMS))
+	return err
+}
+
+// LongPress presses and holds a point by issuing a same-point swipe with a long
+// duration (Android has no dedicated long-press input verb).
+func LongPress(ctx context.Context, serial string, x, y, durationMS int) error {
+	if durationMS <= 0 {
+		durationMS = 600
+	}
+	_, err := runAdb(ctx, serial, "shell", "input", "swipe",
+		strconv.Itoa(x), strconv.Itoa(y), strconv.Itoa(x), strconv.Itoa(y), strconv.Itoa(durationMS))
+	return err
+}
+
+// InputText types text via the IME. Spaces are escaped for `input text`.
+func InputText(ctx context.Context, serial, text string) error {
+	_, err := runAdb(ctx, serial, "shell", "input", "text", escapeInputText(text))
+	return err
+}
+
+// escapeInputText encodes a string for `adb shell input text`, which treats
+// spaces as argument separators and chokes on several shell metacharacters.
+func escapeInputText(s string) string {
+	replacer := strings.NewReplacer(
+		" ", "%s",
+		"&", "\\&",
+		"<", "\\<",
+		">", "\\>",
+		"?", "\\?",
+		"|", "\\|",
+		";", "\\;",
+		"(", "\\(",
+		")", "\\)",
+	)
+	return replacer.Replace(s)
+}
+
+// PressKey sends a keyevent by resolved code.
+func PressKey(ctx context.Context, serial string, code int) error {
+	_, err := runAdb(ctx, serial, "shell", "input", "keyevent", strconv.Itoa(code))
+	return err
+}
+
+// EnterPIN types digits on a PIN pad, tapping each key with a settle delay so it
+// registers. It resolves each digit's tap point in priority order:
+//
+//  1. an explicit coords override for that digit, else
+//  2. a standard 3x4 dialpad position computed from grid (the pad's bounding
+//     box), else
+//  3. the digit's element located in the UI hierarchy.
+//
+// The grid and coords paths exist because custom-drawn pads (React Native /
+// Skia SDK pads) render their keys on a canvas that uiautomator cannot see, so
+// the hierarchy lookup (3) finds nothing. For those, pass grid or coords.
+func EnterPIN(ctx context.Context, serial, digits string, grid *Bounds, coords map[rune]Point) error {
+	var elems []Element // lazily loaded only if we fall through to the hierarchy
+	for _, d := range digits {
+		if d < '0' || d > '9' {
+			return fmt.Errorf("digits must be 0-9, got %q", string(d))
+		}
+		var pt Point
+		switch {
+		case hasPoint(coords, d):
+			pt = coords[d]
+		case grid != nil:
+			p, ok := dialpadPoint(*grid, d)
+			if !ok {
+				return fmt.Errorf("cannot place digit %q on a 3x4 dialpad grid", string(d))
+			}
+			pt = p
+		default:
+			if elems == nil {
+				var err error
+				elems, err = DescribeUI(ctx, serial)
+				if err != nil {
+					return err
+				}
+			}
+			e, ok := FindByText(elems, string(d), false)
+			if !ok {
+				return fmt.Errorf("digit %q not found in the UI hierarchy; the pad may be custom-drawn (RN/Skia) and invisible to describe_ui. Pass 'grid' (the pad's bounding box, for a standard 3x4 layout) or 'coords' (explicit per-digit x,y)", string(d))
+			}
+			pt = e.Center
+		}
+		if err := Tap(ctx, serial, pt.X, pt.Y); err != nil {
+			return err
+		}
+		time.Sleep(300 * time.Millisecond)
+	}
+	return nil
+}
+
+func hasPoint(m map[rune]Point, d rune) bool {
+	if m == nil {
+		return false
+	}
+	_, ok := m[d]
+	return ok
+}
+
+// dialpadPoint maps a digit to its center on a standard 3x4 phone dialpad laid
+// out inside b: rows 1-2-3 / 4-5-6 / 7-8-9 / (blank)-0-(blank).
+func dialpadPoint(b Bounds, digit rune) (Point, bool) {
+	positions := map[rune][2]int{ // {col, row}
+		'1': {0, 0}, '2': {1, 0}, '3': {2, 0},
+		'4': {0, 1}, '5': {1, 1}, '6': {2, 1},
+		'7': {0, 2}, '8': {1, 2}, '9': {2, 2},
+		'0': {1, 3},
+	}
+	pos, ok := positions[digit]
+	if !ok {
+		return Point{}, false
+	}
+	colW := (b.X2 - b.X1) / 3
+	rowH := (b.Y2 - b.Y1) / 4
+	return Point{
+		X: b.X1 + pos[0]*colW + colW/2,
+		Y: b.Y1 + pos[1]*rowH + rowH/2,
+	}, true
+}

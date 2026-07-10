@@ -1,0 +1,15 @@
+# Build output
+/bin/
+*.exe
+
+# Go
+*.test
+*.out
+coverage.*
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store

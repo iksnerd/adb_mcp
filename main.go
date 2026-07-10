@@ -6,11 +6,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"AndroidEmulatorMCP/internal/android"
@@ -22,7 +25,7 @@ import (
 
 // version is overridable at build time via -ldflags "-X main.version=...".
 // The Makefile injects the value from the VERSION file / git.
-var version = "0.5.0"
+var version = "0.5.1"
 
 func main() {
 	log.SetFlags(0)
@@ -38,10 +41,6 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// Tear down any running logcat/screen-record capture sessions on exit so
-	// their detached adb processes and temp files don't leak.
-	defer android.StopAllCaptures()
-
 	srv := mcp.NewServer(&mcp.Implementation{
 		Name:    "android-emulator-mcp",
 		Version: version,
@@ -50,7 +49,32 @@ func main() {
 	tools.Register(srv)
 	guides.Register(srv)
 
-	if err := srv.Run(ctx, &mcp.StdioTransport{}); err != nil && ctx.Err() == nil {
+	err := srv.Run(ctx, &mcp.StdioTransport{})
+
+	// Tear down any running logcat/screen-record capture sessions on EVERY exit
+	// path so their detached adb processes and temp files don't leak. This runs
+	// explicitly (not via defer) because the log.Fatalf below would os.Exit and
+	// skip deferred cleanup on the error path.
+	android.StopAllCaptures()
+
+	// A cancelled context (SIGINT/SIGTERM) or a closed stdin (the MCP client
+	// disconnecting) is a normal shutdown, not a failure — exit 0 quietly.
+	// Only a genuinely unexpected error is fatal.
+	if err != nil && ctx.Err() == nil && !isCleanShutdown(err) {
 		log.Fatalf("server error: %v", err)
 	}
+}
+
+// isCleanShutdown reports whether a non-nil error from srv.Run just means the
+// stdio stream closed (the MCP client went away), which for a stdio server is a
+// normal end-of-life, not a crash. We check io.EOF / a closed pipe first; the
+// go-sdk (v1.6.1) unfortunately folds the underlying io.EOF into a JSON-RPC
+// "server is closing" WireError *string* with no exported sentinel to match, so
+// we fall back to that documented message.
+func isCleanShutdown(err error) bool {
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrClosedPipe) {
+		return true
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "server is closing") || strings.HasSuffix(msg, "EOF")
 }

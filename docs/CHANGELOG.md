@@ -4,6 +4,12 @@ Shipped work, newest first. Roadmap and open ideas live in
 [BACKLOG.md](BACKLOG.md); the code layout is described in
 [../ARCHITECTURE.md](../ARCHITECTURE.md).
 
+## v0.5.1 — clean process shutdown
+
+- **Fix capture-session leak on client disconnect.** The server shut down via `log.Fatalf`, which `os.Exit`s and skips deferred cleanup — so on the normal stdin-EOF path (the MCP client closing), `StopAllCaptures()` never ran and a live `adb logcat`/`screenrecord` process plus its temp file leaked. Cleanup now runs explicitly on every exit path.
+- **Exit cleanly on a normal disconnect.** A cancelled context (SIGINT/SIGTERM) or closed stdin now exits 0 quietly instead of logging a fatal "server error"; only genuinely unexpected errors are fatal (`isCleanShutdown` helper — the go-sdk folds `io.EOF` into a string with no exported sentinel).
+- Verified live: the server exits when the client closes or is SIGKILL'd (no orphan), and capture sessions are torn down on both the EOF and signal paths. The `boot_emulator` emulator stays up by design (detached; stop it with `shutdown_emulator`).
+
 ## v0.5.0 — architecture split, bug-fix pass, gesture/status/report tools (46 tools)
 
 **Refactor — world-class layout**

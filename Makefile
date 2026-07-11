@@ -1,4 +1,4 @@
-BINARY := android-emulator-mcp
+BINARY := adb-mcp
 INSTALL_DIR ?= $(HOME)/.local/bin
 
 # Version: prefer `git describe`, fall back to the VERSION file.

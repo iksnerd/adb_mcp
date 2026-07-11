@@ -1,4 +1,4 @@
-module AndroidEmulatorMCP
+module github.com/iksnerd/adb_mcp
 
 go 1.26
 

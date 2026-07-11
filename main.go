@@ -1,7 +1,7 @@
-// Command android-emulator-mcp is an MCP server that drives Android
-// emulators/devices over adb: boot AVDs, screenshot, read the UI hierarchy,
-// tap/swipe/type, manage the device lock, read logcat, and control app
-// lifecycle. It is the Android counterpart to XcodeBuildMCP.
+// Command adb-mcp is an MCP server for Android that drives emulators/devices
+// over adb: boot AVDs, screenshot, read the UI hierarchy, tap/swipe/type,
+// manage the device lock, read logcat, and control app lifecycle. It is the
+// Android counterpart to XcodeBuildMCP.
 package main
 
 import (
@@ -16,25 +16,25 @@ import (
 	"strings"
 	"syscall"
 
-	"AndroidEmulatorMCP/internal/android"
-	"AndroidEmulatorMCP/internal/guides"
-	"AndroidEmulatorMCP/internal/tools"
+	"github.com/iksnerd/adb_mcp/internal/android"
+	"github.com/iksnerd/adb_mcp/internal/guides"
+	"github.com/iksnerd/adb_mcp/internal/tools"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // version is overridable at build time via -ldflags "-X main.version=...".
 // The Makefile injects the value from the VERSION file / git.
-var version = "0.5.1"
+var version = "0.6.0"
 
 func main() {
 	log.SetFlags(0)
-	log.SetPrefix("android-emulator-mcp: ")
+	log.SetPrefix("adb-mcp: ")
 
 	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
 	if *showVersion {
-		fmt.Printf("android-emulator-mcp %s\n", version)
+		fmt.Printf("adb-mcp %s\n", version)
 		return
 	}
 
@@ -42,7 +42,7 @@ func main() {
 	defer stop()
 
 	srv := mcp.NewServer(&mcp.Implementation{
-		Name:    "android-emulator-mcp",
+		Name:    "adb-mcp",
 		Version: version,
 	}, nil)
 

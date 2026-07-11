@@ -84,7 +84,7 @@ func StopLogcatCapture(serial, filter string) (string, error) {
 	needle := strings.ToLower(strings.TrimSpace(filter))
 	var kept []string
 	for _, line := range strings.Split(string(data), "\n") {
-		if strings.Contains(line, "chatty") {
+		if isChattyNoise(line) {
 			continue
 		}
 		if needle != "" && !strings.Contains(strings.ToLower(line), needle) {

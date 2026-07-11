@@ -33,11 +33,17 @@ func ListAVDs(ctx context.Context) ([]string, error) {
 // waitForBoot is true, waits until it reports sys.boot_completed. It returns the
 // serial of the newly booted device.
 func BootEmulator(ctx context.Context, avd string, noSnapshot, waitForBoot, wipeData bool, timeout time.Duration) (string, error) {
+	// Snapshot the devices present before boot so we can identify the new one
+	// afterwards. If this listing fails we must not proceed: an empty snapshot
+	// would make the discovery loop below treat an already-attached, unrelated
+	// device as "newly booted" and return the wrong serial.
 	before := map[string]bool{}
-	if devs, err := ListDevices(ctx); err == nil {
-		for _, d := range devs {
-			before[d.Serial] = true
-		}
+	devs, err := ListDevices(ctx)
+	if err != nil {
+		return "", fmt.Errorf("list devices before boot: %w", err)
+	}
+	for _, d := range devs {
+		before[d.Serial] = true
 	}
 
 	args := []string{"-avd", avd}

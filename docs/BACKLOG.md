@@ -25,4 +25,4 @@ device-lock/Keystore, custom PIN pads, `tap_on_text`/`wait_for_text`,
 - Every device-facing tool takes an optional `serial`; single-device sessions can omit it.
 - Keep `internal/android` pure/testable; `internal/tools` stays a thin MCP binding. Each `tools/<domain>.go` mirrors an `android/<domain>.go` — see [../ARCHITECTURE.md](../ARCHITECTURE.md).
 - Add unit tests for any new pure logic (parsers, coordinate math, arg parsing).
-- Feedback/bugs also live in the Council-Hub room `android-emulator-mcp-feedback`.
+- Open a [GitHub issue](https://github.com/iksnerd/adb_mcp/issues) for feedback, bugs, or tool requests.

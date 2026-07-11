@@ -4,6 +4,45 @@ Shipped work, newest first. Roadmap and open ideas live in
 [BACKLOG.md](BACKLOG.md); the code layout is described in
 [../ARCHITECTURE.md](../ARCHITECTURE.md).
 
+## v0.6.0 — renamed to adb_mcp
+
+- **Renamed the project from `AndroidEmulatorMCP` to `adb_mcp`.** Google's
+  [Android brand guidelines](https://developer.android.com/distribute/marketing-tools/brand-guidelines)
+  don't allow "Android" (or anything confusingly similar) to lead a product
+  name — it has to read as "X for Android," not "Android X." Go module path,
+  all internal imports, the binary (`android-emulator-mcp` → `adb-mcp`), the
+  MCP server identifier, `.mcp.json`, and the Makefile all moved together.
+- Added a trademark-attribution line and brand-compliant tagline to the README
+  ("an MCP server *for* Android," not "an Android MCP server").
+- Set the Go module path to its public repo URL (`github.com/iksnerd/adb_mcp`)
+  so the server is `go install`-able.
+
+### Bug fixes
+
+- **`open_url` with a package target was broken.** A bare package name was
+  appended as a positional argument to `am start`, which `am` parses as the
+  intent *data URI* — silently clobbering the `-d <url>` and opening the wrong
+  thing. Now passed correctly as `-p <package>`.
+- **`boot_emulator` could return the wrong serial.** If the pre-boot device
+  listing errored, the "new device" snapshot was empty and any already-attached
+  emulator was mistaken for the freshly-booted one. That error is now surfaced
+  instead of silently driving the wrong device.
+- **`swipe` schema now marks `x2`/`y2` as required** (they always were), so the
+  calling model isn't misled into omitting the end point.
+- **Test-report parsing no longer drops failing-test names** from a
+  `<testsuites>` wrapper that also carries aggregate counts on its root element
+  (regression test added).
+- **The `logcat` "chatty" filter is now precise** — it only drops chatty dedup
+  spam, not any line that merely contains the word "chatty" (an app tag,
+  package name, or message).
+
+### Repo / OSS readiness
+
+- Added `LICENSE` (MIT), `CONTRIBUTING.md`, `SECURITY.md`, a GitHub Actions CI
+  workflow (`gofmt`/`vet`/`test`/`build`), and `CODEOWNERS`.
+- Removed a stale internal planning doc; replaced a private feedback-room
+  reference with GitHub Issues; hardened `.gitignore`.
+
 ## v0.5.1 — clean process shutdown
 
 - **Fix capture-session leak on client disconnect.** The server shut down via `log.Fatalf`, which `os.Exit`s and skips deferred cleanup — so on the normal stdin-EOF path (the MCP client closing), `StopAllCaptures()` never ran and a live `adb logcat`/`screenrecord` process plus its temp file leaked. Cleanup now runs explicitly on every exit path.

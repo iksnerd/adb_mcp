@@ -7,9 +7,23 @@
 *.out
 coverage.*
 
+# Compiled objects
+*.dylib
+*.so
+
+# Data / logs that shouldn't be committed
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
 # IDE
 .idea/
 .vscode/
 
 # OS
 .DS_Store
+Thumbs.db
+
+# Personal / pre-launch drafts kept out of the public repo
+docs/personal/

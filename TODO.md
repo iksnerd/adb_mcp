@@ -1,11 +1,11 @@
-# AndroidEmulatorMCP — roadmap
+# adb_mcp — roadmap
 
 The Android counterpart to [XcodeBuildMCP](https://github.com/getsentry/XcodeBuildMCP).
 This file is the lean hub — details live in linked docs so it stays readable.
 
-**Current:** v0.5.1 · 46 tools + 4 guide resources · [tool reference in README](README.md#tools)
+**Current:** v0.6.0 · 46 tools + 4 guide resources · [tool reference in README](README.md#tools)
 Installed + smoke-tested live on an emulator (new tools + `max_dim:0` fix verified).
-Core parity with [XcodeBuildMCP](https://github.com/cameroncooke/XcodeBuildMCP) reached; remaining gaps below.
+Core parity with [XcodeBuildMCP](https://github.com/getsentry/XcodeBuildMCP) reached; remaining gaps below.
 
 ## Map
 

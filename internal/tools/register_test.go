@@ -3,7 +3,7 @@ package tools
 import (
 	"testing"
 
-	"AndroidEmulatorMCP/internal/android"
+	"github.com/iksnerd/adb_mcp/internal/android"
 )
 
 func TestParseCoords(t *testing.T) {

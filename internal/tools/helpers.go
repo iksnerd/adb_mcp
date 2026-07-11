@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"AndroidEmulatorMCP/internal/android"
+	"github.com/iksnerd/adb_mcp/internal/android"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )

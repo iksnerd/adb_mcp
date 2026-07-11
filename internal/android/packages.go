@@ -66,7 +66,10 @@ func ClearAppData(ctx context.Context, serial, pkg string) (string, error) {
 func OpenURL(ctx context.Context, serial, url, pkg string) (string, error) {
 	args := []string{"shell", "am", "start", "-a", "android.intent.action.VIEW", "-d", url}
 	if strings.TrimSpace(pkg) != "" {
-		args = append(args, pkg)
+		// Restrict the intent to a package with the -p option. A bare positional
+		// argument would be parsed by `am` as the intent DATA URI, clobbering the
+		// -d url above and silently opening the wrong thing.
+		args = append(args, "-p", pkg)
 	}
 	return runAdb(ctx, serial, args...)
 }

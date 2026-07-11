@@ -96,10 +96,12 @@ func isTestReport(path string) bool {
 // parseJUnitSuite parses one report, which may be a single <testsuite> or a
 // <testsuites> wrapper containing several.
 func parseJUnitSuite(data []byte) (junitSuite, bool) {
-	var single junitSuite
-	if err := xml.Unmarshal(data, &single); err == nil && (single.Tests > 0 || len(single.Cases) > 0) {
-		return single, true
-	}
+	// Try the <testsuites> wrapper first. Such a wrapper can carry aggregate
+	// counts on its root (tests="N" ...) while the per-<testcase> detail lives on
+	// the child <testsuite> elements. Parsing it as a single suite would read the
+	// root's counts but see no cases, dropping every failing-test name. This
+	// unmarshal only matches when there are genuine child <testsuite> elements,
+	// so a lone <testsuite> document falls through to the single-suite path.
 	var multi struct {
 		Suites []junitSuite `xml:"testsuite"`
 	}
@@ -113,6 +115,10 @@ func parseJUnitSuite(data []byte) (junitSuite, bool) {
 			combined.Cases = append(combined.Cases, s.Cases...)
 		}
 		return combined, true
+	}
+	var single junitSuite
+	if err := xml.Unmarshal(data, &single); err == nil && (single.Tests > 0 || len(single.Cases) > 0) {
+		return single, true
 	}
 	return junitSuite{}, false
 }

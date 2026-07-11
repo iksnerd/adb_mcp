@@ -1,21 +1,38 @@
-# AndroidEmulatorMCP
+<div align="center">
+<img src="assets/android-head_flat.svg" width="72" alt="Android robot logo">
 
-An [MCP](https://modelcontextprotocol.io) server that lets an AI agent drive an
-Android emulator or device over `adb` — boot an AVD, screenshot, read the UI
-hierarchy, tap/swipe/type, set a device lock, read `logcat`, and manage app
-lifecycle.
+# adb_mcp
+
+**An [MCP](https://modelcontextprotocol.io) server for Android**
+
+[![Go](https://img.shields.io/badge/Go-1.26%2B-00ADD8?logo=go&logoColor=white)](go.mod)
+[![MCP](https://img.shields.io/badge/MCP-stdio-3DDC84)](https://modelcontextprotocol.io)
+
+</div>
+
+---
+
+`adb_mcp` lets an AI agent drive an Android emulator or device over `adb` —
+boot an AVD, screenshot, read the UI hierarchy, tap/swipe/type, set a device
+lock, read `logcat`, and manage app lifecycle.
 
 It is the Android counterpart to [XcodeBuildMCP](https://github.com/getsentry/XcodeBuildMCP):
 where XcodeBuildMCP gives an agent first-class control of iOS simulators, this
 gives the same for Android emulators. Built on the official
-[Go MCP SDK](https://github.com/modelcontextprotocol/go-sdk), speaks stdio.
+[Go MCP SDK](https://github.com/modelcontextprotocol/go-sdk) and communicates over stdio.
+
+> Android is a trademark of Google LLC. `adb_mcp` is an independent, unofficial
+> tool built for Android and is not affiliated with, sponsored, or endorsed by Google.
+> The Android robot above is reproduced/modified from work created and shared by
+> Google and used according to terms described in the
+> [Creative Commons 3.0 Attribution License](https://creativecommons.org/licenses/by/3.0/).
 
 ## Why
 
 Driving Android by hand means a long runbook of raw `adb` commands, and it is
 easy to get wrong (stale tap coordinates, CRLF-corrupted screenshots, forgetting
-`exec-out`, guessing coordinates off a downscaled image). This server encodes
-that hard-won knowledge as tools so the agent can't repeat the mistakes:
+`exec-out`, guessing coordinates off a downscaled image). This server bakes
+that knowledge into its tools, so the agent doesn't have to relearn it:
 
 - Screenshots use `exec-out screencap` (no CRLF corruption) and are auto-downscaled
   so the image reader accepts them.
@@ -37,10 +54,15 @@ agent can consult the "skill" the same way it would read a skill file.
 ## Build & install
 
 ```bash
-make install                 # builds ./bin/android-emulator-mcp and copies it to ~/.local/bin
+make install                 # builds ./bin/adb-mcp and copies it to ~/.local/bin
 # or:
-go build -o bin/android-emulator-mcp .
+go build -o bin/adb-mcp .
 ```
+
+The MCP registration below launches the server by the bare name `adb-mcp`, so it
+must be on your `$PATH`. `make install` puts it in `~/.local/bin` — make sure
+that's on your `PATH` (`which adb-mcp` should resolve). Otherwise point the
+client at the absolute path to the built binary instead.
 
 ## Register with an MCP client
 
@@ -48,106 +70,37 @@ go build -o bin/android-emulator-mcp .
 or explicitly:
 
 ```bash
-claude mcp add android -- android-emulator-mcp
+claude mcp add adb -- adb-mcp
 ```
 
-Any other client: run `android-emulator-mcp` over stdio. Example config:
+Any other client: run `adb-mcp` over stdio. Example config:
 
 ```json
 {
   "mcpServers": {
-    "android": { "command": "android-emulator-mcp" }
+    "adb": { "command": "adb-mcp" }
   }
 }
 ```
 
 ## Tools
 
-Every device-facing tool takes an optional `serial` (adb `-s`). Omit it when a
-single device is attached; with several, pass one from `list_devices`.
+46 tools across eight areas. Every device-facing tool takes an optional
+`serial` (adb `-s`) — omit it with one device attached, or pass one from
+`list_devices` with several. Full reference: [docs/TOOLS.md](docs/TOOLS.md).
 
-### Emulator / device management
-| Tool | Purpose |
-|---|---|
-| `list_avds` | List AVDs available to boot |
-| `boot_emulator` | Boot an AVD (detached), wait for boot, return its serial |
-| `list_devices` | List attached devices and adb state |
-| `wait_for_boot` | Block until `sys.boot_completed=1` |
-| `shutdown_emulator` | Power off (`adb emu kill`) |
-| `connect_wireless` | Connect/pair a device over Wi-Fi (`adb connect`/`pair`) |
+- **Emulator / device** — boot, list, wait-for-boot, shut down, connect over Wi-Fi
+- **Observe** — `screenshot` to see, `describe_ui` for true-pixel element centers
+- **Interact** — tap, swipe, drag, long-press, type, key combos, PIN pads
+- **Lock / Keystore** — set/clear a secure lock screen, check lock state
+- **App lifecycle** — install/uninstall, launch/stop, clear data, permissions, deep links, push/pull files
+- **Logs & capture** — one-shot or streaming `logcat`, screen recording
+- **Environment & diagnostics** — dark mode, mock location, clean status bar, `doctor`
+- **Gradle build & test** — `assembleDebug`, unit tests, instrumented tests, task discovery
 
-### Observe
-| Tool | Purpose |
-|---|---|
-| `screenshot` | Capture the screen as a PNG (auto-downscaled) — to *see* state |
-| `describe_ui` | UI hierarchy as elements with text/desc/id + true-pixel `center` — to *aim* |
-
-### Interact
-| Tool | Purpose |
-|---|---|
-| `tap` | Tap true-pixel `(x,y)` (use a `describe_ui` center) |
-| `tap_on_text` | Find an element by label/desc and tap its center |
-| `long_press` | Press and hold `(x,y)` for a duration |
-| `wait_for_text` | Poll until a label appears, then return its tappable center |
-| `swipe` | Swipe/drag (scroll down = high y → low y); `x`/`y` alias `x1`/`y1` |
-| `drag` | Press-hold-move-release drag (`draganddrop`) — for drag handles & reorder |
-| `input_text` | Type into the focused field via the IME |
-| `press_key` | Press a named key (`enter`,`back`,`home`,`escape`,…) or raw keycode |
-| `input_key_combo` | Press a chord together, e.g. `["ctrl","a"]`, `["alt","tab"]` |
-| `enter_pin` | Enter digits on a PIN pad — with `grid`/`coords` for canvas-drawn pads |
-
-### Device lock / Keystore
-| Tool | Purpose |
-|---|---|
-| `set_device_lock` | Set a pin/pattern/password (needed for Keystore-backed crypto) |
-| `clear_device_lock` | Remove the lock (supply the current credential) |
-| `is_device_secure` | Whether a secure lock is set |
-
-### App lifecycle
-| Tool | Purpose |
-|---|---|
-| `list_packages` | List installed packages (filterable) |
-| `get_app_details` | Version name/code + launchable activity of an app |
-| `install_app` / `uninstall_app` | Install/reinstall or remove an app |
-| `launch_app` / `stop_app` | Launch the LAUNCHER activity / force-stop |
-| `clear_app_data` | Wipe data+cache → first-launch state |
-| `grant_permission` / `revoke_permission` | Grant/revoke a runtime permission |
-| `open_url` | Open a URL or deep link (ACTION_VIEW) |
-| `push_file` / `pull_file` | Copy files to/from the device |
-
-### Logs & capture
-| Tool | Purpose |
-|---|---|
-| `logcat` | One-shot dump of recent log lines, filterable — find the native `Caused by:` |
-| `start_logcat_capture` / `stop_logcat_capture` | Stream logs across a flow, then return them |
-| `start_screen_record` / `stop_screen_record` | Record the screen to mp4 and pull it |
-
-### Environment & diagnostics
-| Tool | Purpose |
-|---|---|
-| `set_dark_mode` | Toggle the system dark theme |
-| `set_location` | Set the mock GPS location |
-| `set_status_bar` | Pin a clean status bar (SystemUI demo mode) for tidy screenshots |
-| `doctor` | Report SDK/adb/emulator/AVD/device health |
-
-### Build & test (Gradle)
-| Tool | Purpose |
-|---|---|
-| `gradle_build` | `./gradlew assembleDebug` (or a given task) → APK path |
-| `run_unit_tests` | `./gradlew test` → structured pass/fail/skip summary + failing tests |
-| `run_instrumented_tests` | `./gradlew connectedAndroidTest` (needs a device) → same summary |
-| `list_gradle_tasks` | Discover available Gradle tasks |
-
-## Resources (the bundled "skill")
-
-The driving know-how ships as MCP resources the client can list and read:
-
-| URI | What it covers |
-|---|---|
-| `android://guide/getting-started` | Boot & connect, the `serial` argument, a first interaction |
-| `android://guide/driving` | The observe→act loop, the true-pixel coordinate rule, tap-eating gotchas |
-| `android://guide/pin-and-lock` | Native PIN pads and Keystore-required device locks |
-| `android://guide/crash-triage` | Using `logcat` to find why a native call really failed |
+The driving know-how itself ships as four MCP **resources** (`android://guide/*`)
+the client can list and read — see [docs/TOOLS.md](docs/TOOLS.md) for the URIs,
+or jump straight to `android://guide/driving` for the core loop below.
 
 ## The core loop
 
@@ -174,5 +127,12 @@ internal/guides/           the skill guides, embedded and served as MCP resource
 
 The two layers follow a **mirror convention** — each `internal/tools/<domain>.go`
 adapter maps to an `internal/android/<domain>.go` execution file of the same
-name. See [ARCHITECTURE.md](ARCHITECTURE.md) (with a Mermaid diagram) for the
-full map and the rules for adding a tool.
+name. Full map and the rules for adding a tool: [ARCHITECTURE.md](ARCHITECTURE.md).
+
+## Documentation
+
+- [docs/TOOLS.md](docs/TOOLS.md) — full tool-by-tool reference and the guide resources
+- [ARCHITECTURE.md](ARCHITECTURE.md) — the mirror convention, package layout, and how to add a tool
+- [docs/CHANGELOG.md](docs/CHANGELOG.md) — shipped work, newest first
+- [docs/BACKLOG.md](docs/BACKLOG.md) — open ideas and XcodeBuildMCP parity gaps
+- [TODO.md](TODO.md) — current roadmap hub

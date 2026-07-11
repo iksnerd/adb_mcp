@@ -76,6 +76,38 @@ func TestParseTestResults(t *testing.T) {
 	}
 }
 
+// Regression: a <testsuites> wrapper that ALSO carries aggregate counts on its
+// root element must still surface the per-testcase failing-test names from its
+// child <testsuite> elements (they used to be dropped).
+func TestParseTestResultsAggregatedWrapper(t *testing.T) {
+	dir := t.TempDir()
+	rep := filepath.Join(dir, "build", "outputs", "androidTest-results", "connected")
+	if err := os.MkdirAll(rep, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(rep, "TEST-aggregate.xml"), `<?xml version="1.0"?>
+<testsuites tests="2" failures="1" errors="0" skipped="0">
+  <testsuite name="LoginTest" tests="2" failures="1" errors="0" skipped="0">
+    <testcase name="opens" classname="com.example.LoginTest"/>
+    <testcase name="submits" classname="com.example.LoginTest">
+      <failure message="expected OK but was ERROR">assert</failure>
+    </testcase>
+  </testsuite>
+</testsuites>`)
+
+	sum, found := ParseTestResults(dir)
+	if !found {
+		t.Fatal("expected the report to be found")
+	}
+	if sum.Tests != 2 || sum.Failures != 1 {
+		t.Errorf("Tests=%d Failures=%d, want 2 and 1", sum.Tests, sum.Failures)
+	}
+	want := "com.example.LoginTest.submits: expected OK but was ERROR"
+	if len(sum.Failed) != 1 || sum.Failed[0] != want {
+		t.Errorf("Failed = %v, want exactly [%q]", sum.Failed, want)
+	}
+}
+
 func TestParseTestResultsNone(t *testing.T) {
 	if _, found := ParseTestResults(t.TempDir()); found {
 		t.Error("expected found=false for a dir with no reports")

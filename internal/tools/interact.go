@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"AndroidEmulatorMCP/internal/android"
+	"github.com/iksnerd/adb_mcp/internal/android"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -29,8 +29,8 @@ type swipeArgs struct {
 	serialArg
 	X1         *int `json:"x1,omitempty" jsonschema:"Start X in true device pixels (alias: x)."`
 	Y1         *int `json:"y1,omitempty" jsonschema:"Start Y in true device pixels (alias: y)."`
-	X2         *int `json:"x2,omitempty" jsonschema:"End X in true device pixels."`
-	Y2         *int `json:"y2,omitempty" jsonschema:"End Y in true device pixels."`
+	X2         int  `json:"x2" jsonschema:"End X in true device pixels."`
+	Y2         int  `json:"y2" jsonschema:"End Y in true device pixels."`
 	X          *int `json:"x,omitempty" jsonschema:"Alias for x1 (start X)."`
 	Y          *int `json:"y,omitempty" jsonschema:"Alias for y1 (start Y)."`
 	DurationMS int  `json:"duration_ms,omitempty" jsonschema:"Swipe duration in ms. Default 300."`
@@ -124,13 +124,13 @@ func swipe(ctx context.Context, in swipeArgs) (*mcp.CallToolResult, error) {
 	}
 	x1 := firstInt(in.X1, in.X) // x is an accepted alias for x1
 	y1 := firstInt(in.Y1, in.Y)
-	if x1 == nil || y1 == nil || in.X2 == nil || in.Y2 == nil {
-		return nil, fmt.Errorf("swipe needs a start and an end point — provide x1, y1, x2, y2 (x and y are accepted aliases for x1 and y1)")
+	if x1 == nil || y1 == nil {
+		return nil, fmt.Errorf("swipe needs a start point — provide x1, y1 (x and y are accepted aliases for x1 and y1)")
 	}
-	if err := android.Swipe(ctx, serial, *x1, *y1, *in.X2, *in.Y2, in.DurationMS); err != nil {
+	if err := android.Swipe(ctx, serial, *x1, *y1, in.X2, in.Y2, in.DurationMS); err != nil {
 		return nil, err
 	}
-	return text("Swiped (%d,%d)->(%d,%d).", *x1, *y1, *in.X2, *in.Y2), nil
+	return text("Swiped (%d,%d)->(%d,%d).", *x1, *y1, in.X2, in.Y2), nil
 }
 
 func drag(ctx context.Context, in dragArgs) (*mcp.CallToolResult, error) {

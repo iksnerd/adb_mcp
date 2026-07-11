@@ -1,7 +1,7 @@
 {
   "mcpServers": {
-    "android": {
-      "command": "android-emulator-mcp",
+    "adb": {
+      "command": "adb-mcp",
       "args": [],
       "env": {}
     }

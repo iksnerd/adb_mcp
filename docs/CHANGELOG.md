@@ -38,8 +38,9 @@ Shipped work, newest first. Roadmap and open ideas live in
 
 ### Repo / OSS readiness
 
-- Added `LICENSE` (MIT), `CONTRIBUTING.md`, `SECURITY.md`, a GitHub Actions CI
-  workflow (`gofmt`/`vet`/`test`/`build`), and `CODEOWNERS`.
+- Added `LICENSE` (MIT), `CONTRIBUTING.md`, `SECURITY.md`, `CODEOWNERS`, and a
+  tag-triggered GitHub Actions release workflow that gates on
+  `gofmt`/`vet`/`test`, then cross-compiles binaries and publishes a Release.
 - Removed a stale internal planning doc; replaced a private feedback-room
   reference with GitHub Issues; hardened `.gitignore`.
 

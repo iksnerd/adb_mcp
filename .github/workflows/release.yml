@@ -1,0 +1,68 @@
+name: Release
+
+# Runs ONLY when a version tag is pushed (e.g. v0.6.0). There is no push/PR CI:
+# checks run here as a gate before any release artifact is published.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write # needed to create the GitHub Release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+          check-latest: true # picks up 1.26.5+ (crypto/tls advisory fix)
+
+      - name: Verify formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt-clean:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build release binaries
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          for p in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            os=${p%/*}; arch=${p#*/}
+            out=adb-mcp
+            [ "$os" = windows ] && out=adb-mcp.exe
+            echo "building $os/$arch"
+            GOOS=$os GOARCH=$arch CGO_ENABLED=0 \
+              go build -trimpath -ldflags "-s -w -X main.version=${VERSION#v}" -o "$out" .
+            base="adb-mcp_${VERSION}_${os}_${arch}"
+            if [ "$os" = windows ]; then
+              zip -q "dist/${base}.zip" "$out"
+            else
+              tar -czf "dist/${base}.tar.gz" "$out"
+            fi
+            rm -f "$out"
+          done
+          (cd dist && sha256sum * > checksums.txt)
+          ls -l dist
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

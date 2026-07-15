@@ -4,6 +4,22 @@ Shipped work, newest first. Roadmap and open ideas live in
 [BACKLOG.md](BACKLOG.md); the code layout is described in
 [../ARCHITECTURE.md](../ARCHITECTURE.md).
 
+## v0.9.0 — screenshot black-frame detection & diagnosis
+
+From council-hub field feedback: `screenshot` returned a bare black PNG in two
+different situations with no hint why, causing repeated misdiagnosis.
+
+- **`screenshot` now detects an all-black frame and says why.** It retries an
+  all-black grab a couple of times (screencap intermittently returns black for
+  a perfectly normal screen — the reported reliability bug), and if it stays
+  black, diagnoses the likely cause: a `FLAG_SECURE` window (e.g. a native PIN
+  pad, which the OS blanks to black) or a sleeping display. The result carries
+  a compact status (`{all_black, secure_window, screen_off, attempts}`) and
+  points the caller at `describe_ui`, which works even when a screenshot is
+  blanked. Live-verified: normal screens aren't flagged; a screen-off frame is
+  detected and labelled. Black detection (`isMostlyBlack`) is pure/unit-tested;
+  the secure-window/screen-off probes are best-effort `dumpsys` reads.
+
 ## v0.8.0 — reload_app, open_dev_menu, richer log filtering
 
 From real field feedback (council-hub `android-emulator-mcp-feedback`) on two

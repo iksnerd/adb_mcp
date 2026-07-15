@@ -41,7 +41,7 @@ func Register(s *mcp.Server) {
 
 	// --- Observe ---
 	add(s, "screenshot",
-		"Capture the current screen as a PNG so you can SEE the UI state. Call it after every action to confirm the screen changed before acting again — driving blind chains taps onto the wrong screen. The image is auto-downscaled (default max 760px) so it is accepted by the image reader; this is for seeing only — derive tap coordinates from describe_ui, not from this image.",
+		"Capture the current screen as a PNG so you can SEE the UI state. Call it after every action to confirm the screen changed before acting again — driving blind chains taps onto the wrong screen. The image is auto-downscaled (default max 760px) so it is accepted by the image reader; this is for seeing only — derive tap coordinates from describe_ui, not from this image. Auto-retries an all-black frame (an intermittent capture glitch) and, if it stays black, says why (FLAG_SECURE content like a native PIN pad, or a sleeping display) — when black, use describe_ui instead.",
 		screenshot)
 	add(s, "describe_ui",
 		"Read the on-screen UI hierarchy as a list of elements, each with its text, content_desc, resource_id, class, clickable flag, pixel bounds, and a precomputed center in TRUE DEVICE PIXELS. This is your source of truth for AIMING: pass an element's center straight to tap. Never guess coordinates from the screenshot (it is downscaled and you will miss). Pure-layout containers are filtered out to keep the list focused on actionable elements.",

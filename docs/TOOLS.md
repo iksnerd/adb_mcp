@@ -18,7 +18,7 @@ single device is attached; with several, pass one from `list_devices`.
 ### Observe
 | Tool | Purpose |
 |---|---|
-| `screenshot` | Capture the screen as a PNG (auto-downscaled) — to *see* state |
+| `screenshot` | Capture the screen as a PNG (auto-downscaled) — to *see* state; retries an all-black frame and flags why (FLAG_SECURE / screen off) |
 | `describe_ui` | UI hierarchy as elements with text/desc/id + true-pixel `center` — to *aim* |
 
 ### Interact

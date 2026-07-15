@@ -67,7 +67,7 @@ func Register(s *mcp.Server) {
 		"Press a hardware/navigation key by name (enter, back, home, menu, tab, del, escape, up, down, left, right, dpad_center, app_switch, search, power, volume_up, volume_down, ...) or a raw Android keycode number. Handy to submit a form (enter), dismiss the keyboard (escape), or go back (back).",
 		pressKey)
 	add(s, "input_key_combo",
-		"Press several keys together as a chord (input keycombination, Android 11+), e.g. keys=[\"ctrl\",\"a\"] to select-all or [\"alt\",\"tab\"] to switch. List modifier(s) first, then the action key; each is a key name (ctrl/alt/shift/meta, a-z, enter, tab, ...) or a raw keycode. For a single key use press_key instead.",
+		"Press several keys together as a chord (input keycombination, Android 11+). Use preset=\"select_all\" (or copy/paste/cut/undo/redo/save/find) for a named shortcut, or keys=[\"ctrl\",\"a\"] / [\"alt\",\"tab\"] to spell one out — modifier(s) first, then the action key; each is a key name (ctrl/alt/shift/meta, a-z, enter, tab, ...) or a raw keycode. For a single key use press_key instead.",
 		inputKeyCombo)
 	add(s, "long_press",
 		"Press and hold a coordinate (true device pixels) for a duration — for context menus, drag handles, and long-press actions.",
@@ -158,7 +158,7 @@ func Register(s *mcp.Server) {
 		"Set the emulator's mock GPS location (longitude, latitude) — for location-gated features.",
 		setLocation)
 	add(s, "set_status_bar",
-		"Pin a clean status bar via SystemUI demo mode (enabled=true) — fixed clock, full signal, chosen battery, no notification icons — so screenshots for docs don't leak the wall clock or a random signal state. Optionally set clock (HHMM) and battery (0-100). Call with enabled=false to restore the live bar.",
+		"Pin a clean status bar via SystemUI demo mode (enabled=true) — fixed clock, chosen signal/battery, no notification icons by default — so screenshots for docs don't leak the wall clock or a random signal state. Optionally set clock (HHMM), battery (0-100), network_type (wifi/mobile/none) with mobile_level/data_type/carrier for mobile, and notifications_visible/notification_icon. Call with enabled=false to restore the live bar.",
 		setStatusBar)
 	add(s, "doctor",
 		"Diagnose the local Android tooling: SDK path, adb/emulator availability, known AVDs, and attached devices. Run this first when something isn't working.",
@@ -169,10 +169,10 @@ func Register(s *mcp.Server) {
 		"Build the app with Gradle (default task assembleDebug) in project_dir, and report the produced APK path(s). project_dir must contain the Gradle wrapper (gradlew). Runs on the host, not a device.",
 		gradleBuild)
 	add(s, "run_unit_tests",
-		"Run Gradle JVM unit tests (default task 'test') in project_dir and return the result summary.",
+		"Run Gradle JVM unit tests (default task 'test') in project_dir and return the result summary, including per-suite timing and failing-test stack traces. Pass json=true for a structured JSON summary instead of the text form.",
 		runUnitTests)
 	add(s, "run_instrumented_tests",
-		"Run Gradle instrumented (on-device) tests (default task 'connectedAndroidTest') in project_dir — requires a booted device/emulator.",
+		"Run Gradle instrumented (on-device) tests (default task 'connectedAndroidTest') in project_dir — requires a booted device/emulator. Returns per-suite timing and failing-test stack traces; pass json=true for a structured JSON summary instead of the text form.",
 		runInstrumentedTests)
 	add(s, "list_gradle_tasks",
 		"List the available Gradle tasks in project_dir (gradlew tasks) — to discover build/test/install targets.",

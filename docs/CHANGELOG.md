@@ -4,6 +4,26 @@ Shipped work, newest first. Roadmap and open ideas live in
 [BACKLOG.md](BACKLOG.md); the code layout is described in
 [../ARCHITECTURE.md](../ARCHITECTURE.md).
 
+## v0.7.0 — richer status bar, deeper test-report insight, key-combo presets
+
+- **`set_status_bar` — richer demo controls.** Added `network_type`
+  (wifi/mobile/none) with `mobile_level`, `data_type` (lte/4g/5g/...), and
+  `carrier` for mobile, plus `notifications_visible`/`notification_icon`.
+  The `notification_icon` broadcast is best-effort — an obscure,
+  version-dependent SystemUI internal that may silently no-op on some SDK
+  images; the network/carrier/data-type controls are well-established demo
+  mode commands and are the primary value here.
+- **Deeper test-report insight.** `run_unit_tests`/`run_instrumented_tests`
+  now report per-suite timing and full failure stack traces (previously only
+  the first message line), and accept `json=true` for a structured summary.
+  Fixed a related bug along the way: a `<testsuites>` wrapper's child suites
+  were being flattened into one combined suite before aggregation, which is
+  exactly what made per-suite timing impossible — each child suite now stays
+  distinct.
+- **`input_key_combo` presets.** Added named shortcuts (`select_all`, `copy`,
+  `paste`, `cut`, `undo`, `redo`, `save`, `find`) via `preset=`, so callers
+  don't need to know the underlying keycodes.
+
 ## v0.6.0 — renamed to adb_mcp
 
 - **Renamed the project from `AndroidEmulatorMCP` to `adb_mcp`.** Google's

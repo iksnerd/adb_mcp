@@ -47,7 +47,8 @@ type dragArgs struct {
 
 type keyComboArgs struct {
 	serialArg
-	Keys []string `json:"keys" jsonschema:"Keys to press together, modifier(s) first, e.g. [\"ctrl\",\"a\"] or [\"alt\",\"tab\"]. Each is a key name (ctrl, alt, shift, meta, a-z, enter, tab, ...) or a raw keycode number. Needs at least 2."`
+	Keys   []string `json:"keys,omitempty" jsonschema:"Keys to press together, modifier(s) first, e.g. [\"ctrl\",\"a\"] or [\"alt\",\"tab\"]. Each is a key name (ctrl, alt, shift, meta, a-z, enter, tab, ...) or a raw keycode number. Needs at least 2. Omit if preset is given."`
+	Preset string   `json:"preset,omitempty" jsonschema:"Named combo shortcut (select_all, copy, paste, cut, undo, redo, save, find) that expands to the right chord — use this instead of keys when a name will do."`
 }
 
 type inputTextArgs struct {
@@ -149,21 +150,32 @@ func inputKeyCombo(ctx context.Context, in keyComboArgs) (*mcp.CallToolResult, e
 	if err != nil {
 		return nil, err
 	}
-	if len(in.Keys) < 2 {
-		return nil, fmt.Errorf("a key combination needs at least 2 keys, e.g. [\"ctrl\",\"a\"]")
-	}
-	codes := make([]int, 0, len(in.Keys))
-	for _, k := range in.Keys {
-		code, err := android.ResolveKey(k)
+	var codes []int
+	var label string
+	if in.Preset != "" {
+		codes, err = android.ResolveCombo(in.Preset)
 		if err != nil {
 			return nil, err
 		}
-		codes = append(codes, code)
+		label = in.Preset
+	} else {
+		if len(in.Keys) < 2 {
+			return nil, fmt.Errorf("a key combination needs at least 2 keys, e.g. [\"ctrl\",\"a\"], or pass preset instead")
+		}
+		codes = make([]int, 0, len(in.Keys))
+		for _, k := range in.Keys {
+			code, err := android.ResolveKey(k)
+			if err != nil {
+				return nil, err
+			}
+			codes = append(codes, code)
+		}
+		label = strings.Join(in.Keys, "+")
 	}
 	if err := android.KeyCombo(ctx, serial, codes); err != nil {
 		return nil, err
 	}
-	return text("Pressed %s together.", strings.Join(in.Keys, "+")), nil
+	return text("Pressed %s together.", label), nil
 }
 
 func inputText(ctx context.Context, in inputTextArgs) (*mcp.CallToolResult, error) {

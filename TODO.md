@@ -3,15 +3,15 @@
 The Android counterpart to [XcodeBuildMCP](https://github.com/getsentry/XcodeBuildMCP).
 This file is the lean hub — details live in linked docs so it stays readable.
 
-**Current:** v0.6.0 · 46 tools + 4 guide resources · [tool reference in README](README.md#tools)
-Installed + smoke-tested live on an emulator (new tools + `max_dim:0` fix verified).
+**Current:** v0.7.0 · 46 tools + 4 guide resources · [tool reference in README](README.md#tools)
+Installed + smoke-tested live on an emulator (status bar mobile/carrier broadcast + key-combo presets verified).
 Core parity with [XcodeBuildMCP](https://github.com/getsentry/XcodeBuildMCP) reached; remaining gaps below.
 
 ## Map
 
 | Doc | What's in it |
 |---|---|
-| [docs/CHANGELOG.md](docs/CHANGELOG.md) | Everything shipped, newest first (v0.1.0 → v0.5.0) |
+| [docs/CHANGELOG.md](docs/CHANGELOG.md) | Everything shipped, newest first (v0.1.0 → v0.7.0) |
 | [docs/BACKLOG.md](docs/BACKLOG.md) | Open ideas + the conventions to follow when adding a tool |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Two-layer mirror layout + how to add a tool (with diagram) |
 
@@ -26,10 +26,7 @@ Pulled from [docs/BACKLOG.md](docs/BACKLOG.md) — see there for full context.
 - [ ] Project scaffolding — new Android project from a template (biggest lift)
 
 **Enhancements**
-- [ ] Multi-touch / pinch-zoom (needs `sendevent`; single-pointer `drag` already shipped)
-- [ ] `set_status_bar` richer demo controls (mobile signal, operator, notification icons)
-- [ ] Deeper test-report insight (stack traces, per-suite timing, JSON output)
-- [ ] `input_key_combo` named presets (`select_all`, `copy`, `paste`, …)
+- [ ] Multi-touch / pinch-zoom (needs `sendevent`; single-pointer `drag` already shipped) — parked, no reliable cross-device approach yet
 
 ## Ground rules
 

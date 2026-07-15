@@ -3,6 +3,7 @@ package android
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -14,10 +15,11 @@ func TestParseTestResults(t *testing.T) {
 		t.Fatal(err)
 	}
 	writeFile(t, filepath.Join(unit, "TEST-com.example.MathTest.xml"), `<?xml version="1.0"?>
-<testsuite name="com.example.MathTest" tests="3" failures="1" errors="0" skipped="1">
+<testsuite name="com.example.MathTest" tests="3" failures="1" errors="0" skipped="1" time="1.500">
   <testcase name="adds" classname="com.example.MathTest"/>
   <testcase name="divides" classname="com.example.MathTest">
-    <failure message="expected 2 but was 3&#10;stacktrace...">assert</failure>
+    <failure message="expected 2 but was 3">assert
+	at com.example.MathTest.divides(MathTest.java:42)</failure>
   </testcase>
   <testcase name="skipMe" classname="com.example.MathTest"><skipped/></testcase>
 </testsuite>`)
@@ -28,10 +30,11 @@ func TestParseTestResults(t *testing.T) {
 	}
 	writeFile(t, filepath.Join(inst, "TEST-emulator.xml"), `<?xml version="1.0"?>
 <testsuites>
-  <testsuite name="UiTest" tests="2" failures="0" errors="1" skipped="0">
+  <testsuite name="UiTest" tests="2" failures="0" errors="1" skipped="0" time="0.750">
     <testcase name="loads" classname="com.example.UiTest"/>
     <testcase name="crashes" classname="com.example.UiTest">
-      <error message="NullPointerException">boom</error>
+      <error message="NullPointerException">boom
+	at com.example.UiTest.crashes(UiTest.java:17)</error>
     </testcase>
   </testsuite>
 </testsuites>`)
@@ -73,6 +76,42 @@ func TestParseTestResults(t *testing.T) {
 	}
 	if !found2 {
 		t.Errorf("Failed = %v, want an entry %q", sum.Failed, wantContains)
+	}
+
+	// Per-suite breakdown: the <testsuites> wrapper must keep its child suite
+	// distinct rather than flattening it into an unnamed combined suite.
+	if len(sum.SuiteBreakdown) != 2 {
+		t.Fatalf("SuiteBreakdown count = %d, want 2 (%+v)", len(sum.SuiteBreakdown), sum.SuiteBreakdown)
+	}
+	byName := map[string]SuiteResult{}
+	for _, sr := range sum.SuiteBreakdown {
+		byName[sr.Name] = sr
+	}
+	if sr, ok := byName["com.example.MathTest"]; !ok || sr.TimeSec != 1.5 {
+		t.Errorf("SuiteBreakdown[com.example.MathTest] = %+v, want TimeSec=1.5", sr)
+	}
+	if sr, ok := byName["UiTest"]; !ok || sr.TimeSec != 0.75 {
+		t.Errorf("SuiteBreakdown[UiTest] = %+v, want TimeSec=0.75", sr)
+	}
+	if sum.TotalTimeSec != 2.25 {
+		t.Errorf("TotalTimeSec = %v, want 2.25", sum.TotalTimeSec)
+	}
+
+	// Full stack traces must be captured (not just the first line).
+	if len(sum.FailedDetail) != 2 {
+		t.Fatalf("FailedDetail count = %d, want 2 (%+v)", len(sum.FailedDetail), sum.FailedDetail)
+	}
+	var mathFail *TestFailure
+	for i := range sum.FailedDetail {
+		if sum.FailedDetail[i].Name == "com.example.MathTest.divides" {
+			mathFail = &sum.FailedDetail[i]
+		}
+	}
+	if mathFail == nil {
+		t.Fatalf("FailedDetail missing com.example.MathTest.divides (%+v)", sum.FailedDetail)
+	}
+	if !strings.Contains(mathFail.Stack, "at com.example.MathTest.divides(MathTest.java:42)") {
+		t.Errorf("FailedDetail stack = %q, want it to contain the trace line", mathFail.Stack)
 	}
 }
 

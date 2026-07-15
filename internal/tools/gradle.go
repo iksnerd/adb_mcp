@@ -16,6 +16,7 @@ type gradleArgs struct {
 	ProjectDir string   `json:"project_dir" jsonschema:"Path to the Android project root containing the Gradle wrapper (gradlew)."`
 	Task       string   `json:"task,omitempty" jsonschema:"Gradle task to run. Defaults to the tool's standard task."`
 	Args       []string `json:"args,omitempty" jsonschema:"Extra arguments passed to Gradle (e.g. --stacktrace, -Pflavor=free)."`
+	JSON       bool     `json:"json,omitempty" jsonschema:"For run_unit_tests/run_instrumented_tests: return the test summary as structured JSON (per-suite timing, full failure stack traces) instead of the human-readable text summary. Ignored by gradle_build and list_gradle_tasks."`
 }
 
 // ---- Handlers ----
@@ -63,6 +64,9 @@ func runGradleReporting(ctx context.Context, in gradleArgs, defaultTask string) 
 		return nil, fmt.Errorf("%s\n\n%s", msg, tailLines(out, 60))
 	}
 	if found {
+		if in.JSON {
+			return jsonResult(summary)
+		}
 		return text("Tests passed (%s).\n\n%s\n\n%s", task, summary.String(), tailLines(out, 20)), nil
 	}
 	return text("Tests passed (%s).\n\n%s", task, tailLines(out, 30)), nil

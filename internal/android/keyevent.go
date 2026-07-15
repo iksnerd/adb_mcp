@@ -58,6 +58,47 @@ var keyCodes = map[string]int{
 	"y": 53, "z": 54,
 }
 
+// presetCombos maps named shortcuts to the chord of key names that expands to
+// them, so callers of input_key_combo don't need to know the individual keys.
+var presetCombos = map[string][]string{
+	"select_all": {"ctrl", "a"},
+	"copy":       {"ctrl", "c"},
+	"paste":      {"ctrl", "v"},
+	"cut":        {"ctrl", "x"},
+	"undo":       {"ctrl", "z"},
+	"redo":       {"ctrl", "shift", "z"},
+	"save":       {"ctrl", "s"},
+	"find":       {"ctrl", "f"},
+}
+
+// ResolveCombo expands a named preset (case-insensitive) into resolved
+// keyevent codes, one per key, via ResolveKey.
+func ResolveCombo(name string) ([]int, error) {
+	keys, ok := presetCombos[strings.TrimSpace(strings.ToLower(name))]
+	if !ok {
+		return nil, fmt.Errorf("unknown combo preset %q; use one of: %s (or pass keys explicitly)", name, strings.Join(PresetNames(), ", "))
+	}
+	codes := make([]int, 0, len(keys))
+	for _, k := range keys {
+		code, err := ResolveKey(k)
+		if err != nil {
+			return nil, err
+		}
+		codes = append(codes, code)
+	}
+	return codes, nil
+}
+
+// PresetNames returns the sorted list of supported combo presets.
+func PresetNames() []string {
+	names := make([]string, 0, len(presetCombos))
+	for name := range presetCombos {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
 // ResolveKey converts a named key (case-insensitive) or a raw integer keycode
 // string into an Android keyevent code.
 func ResolveKey(key string) (int, error) {

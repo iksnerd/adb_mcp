@@ -92,13 +92,13 @@ func Register(s *mcp.Server) {
 
 	// --- Logs & capture ---
 	add(s, "logcat",
-		"Dump recent native log lines (last N, default 400), optionally filtered by a case-insensitive substring. This is how you find the REAL reason a native call failed when the UI only shows a generic 'X failed' alert: filter by your app tag or 'Exception'/'Caused by' and read the 'Caused by:' line — that is the root cause. Dumps and exits (does not stream); chatty spam is stripped.",
+		"Dump recent native log lines (last N, default 400), optionally filtered by a case-insensitive substring, a minimum priority (V/D/I/W/E/F — e.g. priority=\"E\" for errors and up), and/or tags (OR'd). This is how you find the REAL reason a native call failed when the UI only shows a generic 'X failed' alert: filter by your app tag or 'Exception'/'Caused by' and read the 'Caused by:' line — that is the root cause. Dumps and exits (does not stream); chatty spam is stripped.",
 		logcat)
 	add(s, "start_logcat_capture",
 		"Begin streaming logcat into a buffer for this device (optionally clearing first). Pair with stop_logcat_capture to get everything logged DURING a flow — use this instead of the one-shot 'logcat' when you need logs across an interaction.",
 		startLogcatCapture)
 	add(s, "stop_logcat_capture",
-		"Stop the running logcat capture and return everything collected since start, optionally filtered (case-insensitive).",
+		"Stop the running logcat capture and return everything collected since start, optionally filtered by a case-insensitive substring, a minimum priority (V/D/I/W/E/F), and/or tags (OR'd) — use these to narrow a long capture instead of spilling the whole buffer.",
 		stopLogcatCapture)
 	add(s, "start_screen_record",
 		"Start recording the screen to an mp4 on the device (Android caps a single recording at ~180s). Pair with stop_screen_record.",
@@ -120,6 +120,12 @@ func Register(s *mcp.Server) {
 	add(s, "stop_app",
 		"Force-stop an app by package name. Pair with launch_app to reset an app to a clean start when reproducing a bug.",
 		stopApp)
+	add(s, "reload_app",
+		"Best-effort: trigger a Metro/JS reload on a React Native dev-client build via the classic <package>.RELOAD_APP_ACTION broadcast. Only works on debug builds of classic (non-bridgeless) RN architectures that register the receiver — on newer RN/Expo dev clients it may silently no-op with no error. If the app doesn't visibly reload, use open_dev_menu then tap_on_text(\"Reload\") instead.",
+		reloadApp)
+	add(s, "open_dev_menu",
+		"Open the React Native dev menu (KEYCODE_MENU) on the foreground app — the reliable way to reach a dev build's Reload/Debug JS Remotely/etc. options when reload_app's broadcast doesn't apply. Follow with tap_on_text or describe_ui to pick a menu item.",
+		openDevMenu)
 	add(s, "uninstall_app",
 		"Uninstall an app by package name (adb uninstall). Use to remove a build before a clean install, or to verify first-run behavior after reinstalling. To keep the app but reset it, prefer clear_app_data.",
 		uninstallApp)

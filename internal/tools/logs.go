@@ -13,8 +13,10 @@ import (
 
 type logcatArgs struct {
 	serialArg
-	Lines  int    `json:"lines,omitempty" jsonschema:"Number of recent lines to dump. Default 400."`
-	Filter string `json:"filter,omitempty" jsonschema:"Case-insensitive substring to keep (e.g. an app tag or \"Exception\")."`
+	Lines    int      `json:"lines,omitempty" jsonschema:"Number of recent lines to dump. Default 400."`
+	Filter   string   `json:"filter,omitempty" jsonschema:"Case-insensitive substring to keep (e.g. an app tag or \"Exception\")."`
+	Priority string   `json:"priority,omitempty" jsonschema:"Minimum priority to keep: V, D, I, W, E, or F (matches adb's own \"*:E\"-style filter — E keeps Error and Fatal). Omit for no priority filtering."`
+	Tags     []string `json:"tags,omitempty" jsonschema:"Keep only lines whose log tag contains one of these (case-insensitive, OR'd), e.g. [\"SessionStore\",\"AuthModule\"]. Omit for no tag filtering."`
 }
 
 type startLogcatArgs struct {
@@ -24,7 +26,9 @@ type startLogcatArgs struct {
 
 type stopLogcatArgs struct {
 	serialArg
-	Filter string `json:"filter,omitempty" jsonschema:"Case-insensitive substring to keep."`
+	Filter   string   `json:"filter,omitempty" jsonschema:"Case-insensitive substring to keep."`
+	Priority string   `json:"priority,omitempty" jsonschema:"Minimum priority to keep: V, D, I, W, E, or F."`
+	Tags     []string `json:"tags,omitempty" jsonschema:"Keep only lines whose log tag contains one of these (case-insensitive, OR'd)."`
 }
 
 type stopRecordArgs struct {
@@ -39,7 +43,7 @@ func logcat(ctx context.Context, in logcatArgs) (*mcp.CallToolResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	out, err := android.Logcat(ctx, serial, in.Lines, in.Filter)
+	out, err := android.Logcat(ctx, serial, in.Lines, android.LogFilter{Substring: in.Filter, Priority: in.Priority, Tags: in.Tags})
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +69,7 @@ func stopLogcatCapture(ctx context.Context, in stopLogcatArgs) (*mcp.CallToolRes
 	if err != nil {
 		return nil, err
 	}
-	out, err := android.StopLogcatCapture(serial, in.Filter)
+	out, err := android.StopLogcatCapture(serial, android.LogFilter{Substring: in.Filter, Priority: in.Priority, Tags: in.Tags})
 	if err != nil {
 		return nil, err
 	}

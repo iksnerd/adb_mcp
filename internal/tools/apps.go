@@ -101,6 +101,28 @@ func stopApp(ctx context.Context, in packageArg) (*mcp.CallToolResult, error) {
 	return text("Force-stopped %s.", in.Package), nil
 }
 
+func reloadApp(ctx context.Context, in packageArg) (*mcp.CallToolResult, error) {
+	serial, err := resolve(ctx, in.Serial)
+	if err != nil {
+		return nil, err
+	}
+	if err := android.ReloadApp(ctx, serial, in.Package); err != nil {
+		return nil, err
+	}
+	return text("Sent a reload broadcast to %s. Best-effort — if it didn't visibly reload (common on newer RN/Expo dev clients), use open_dev_menu then tap_on_text(\"Reload\") instead.", in.Package), nil
+}
+
+func openDevMenu(ctx context.Context, in serialArg) (*mcp.CallToolResult, error) {
+	serial, err := resolve(ctx, in.Serial)
+	if err != nil {
+		return nil, err
+	}
+	if err := android.OpenDevMenu(ctx, serial); err != nil {
+		return nil, err
+	}
+	return text("Opened the dev menu on %s. Use tap_on_text or describe_ui to pick an option (Reload, Debug JS Remotely, ...).", serial), nil
+}
+
 func uninstallApp(ctx context.Context, in packageArg) (*mcp.CallToolResult, error) {
 	serial, err := resolve(ctx, in.Serial)
 	if err != nil {

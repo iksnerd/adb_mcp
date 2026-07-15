@@ -3,15 +3,15 @@
 The Android counterpart to [XcodeBuildMCP](https://github.com/getsentry/XcodeBuildMCP).
 This file is the lean hub — details live in linked docs so it stays readable.
 
-**Current:** v0.7.0 · 46 tools + 4 guide resources · [tool reference in README](README.md#tools)
-Installed + smoke-tested live on an emulator (status bar mobile/carrier broadcast + key-combo presets verified).
+**Current:** v0.8.0 · 48 tools + 4 guide resources · [tool reference in README](README.md#tools)
+Installed + smoke-tested live on an emulator (reload_app live-verified against a real Expo dev client; status bar mobile/carrier broadcast + key-combo presets verified).
 Core parity with [XcodeBuildMCP](https://github.com/getsentry/XcodeBuildMCP) reached; remaining gaps below.
 
 ## Map
 
 | Doc | What's in it |
 |---|---|
-| [docs/CHANGELOG.md](docs/CHANGELOG.md) | Everything shipped, newest first (v0.1.0 → v0.7.0) |
+| [docs/CHANGELOG.md](docs/CHANGELOG.md) | Everything shipped, newest first (v0.1.0 → v0.8.0) |
 | [docs/BACKLOG.md](docs/BACKLOG.md) | Open ideas + the conventions to follow when adding a tool |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Two-layer mirror layout + how to add a tool (with diagram) |
 
@@ -19,10 +19,15 @@ Core parity with [XcodeBuildMCP](https://github.com/getsentry/XcodeBuildMCP) rea
 
 Pulled from [docs/BACKLOG.md](docs/BACKLOG.md) — see there for full context.
 
+**Field feedback** (from real a partner app debugging sessions — see BACKLOG.md)
+- [ ] Bound `stop_logcat_capture` output by default (tail cap or summary+file)
+- [ ] Clearer `launch_app` failure output + dev-client (Expo Dev Launcher) awareness
+- [ ] `logcat` buffer-rotation hint; `screenshot`/`describe_ui` state-skew note
+
 **XcodeBuildMCP parity gaps** (priority order)
 - [ ] `build_and_run` — one-shot build → install → launch (highest value / lowest lift)
 - [ ] Deeper project discovery — `list_gradle_variants` + module/build-info dump
-- [ ] Structured crash extractor over `logcat` (fatal-exception block → fields)
+- [ ] `last_crash` — structured crash extractor (`dumpsys dropbox`/tombstone → fields)
 - [ ] Project scaffolding — new Android project from a template (biggest lift)
 
 **Enhancements**

@@ -56,6 +56,25 @@ func StopApp(ctx context.Context, serial, pkg string) error {
 	return err
 }
 
+// ReloadApp attempts to trigger a Metro/JS reload via the classic React
+// Native dev-support broadcast receiver (<pkg>.RELOAD_APP_ACTION). This is
+// best-effort: the receiver is only registered in debug builds of classic
+// (non-bridgeless) RN architectures, so on newer RN/Expo dev clients this
+// broadcast may be silently ignored with no error. When it doesn't visibly
+// reload the app, fall back to OpenDevMenu + tapping "Reload".
+func ReloadApp(ctx context.Context, serial, pkg string) error {
+	_, err := runAdb(ctx, serial, "shell", "am", "broadcast", "-a", pkg+".RELOAD_APP_ACTION")
+	return err
+}
+
+// OpenDevMenu opens the React Native dev menu (KEYCODE_MENU) on the
+// foreground app — the standard adb way to reach a dev build's Reload/Debug
+// JS Remotely/etc. options. From here, tap_on_text("Reload") (or another menu
+// item) drives it.
+func OpenDevMenu(ctx context.Context, serial string) error {
+	return PressKey(ctx, serial, 82)
+}
+
 // ClearAppData wipes an app's data/cache, returning it to a first-launch state.
 func ClearAppData(ctx context.Context, serial, pkg string) (string, error) {
 	return runAdb(ctx, serial, "shell", "pm", "clear", pkg)

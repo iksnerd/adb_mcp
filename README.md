@@ -85,7 +85,7 @@ Any other client: run `adb-mcp` over stdio. Example config:
 
 ## Tools
 
-46 tools across eight areas. Every device-facing tool takes an optional
+48 tools across eight areas. Every device-facing tool takes an optional
 `serial` (adb `-s`) — omit it with one device attached, or pass one from
 `list_devices` with several. Full reference: [docs/TOOLS.md](docs/TOOLS.md).
 
@@ -93,8 +93,8 @@ Any other client: run `adb-mcp` over stdio. Example config:
 - **Observe** — `screenshot` to see, `describe_ui` for true-pixel element centers
 - **Interact** — tap, swipe, drag, long-press, type, key combos, PIN pads
 - **Lock / Keystore** — set/clear a secure lock screen, check lock state
-- **App lifecycle** — install/uninstall, launch/stop, clear data, permissions, deep links, push/pull files
-- **Logs & capture** — one-shot or streaming `logcat`, screen recording
+- **App lifecycle** — install/uninstall, launch/stop, `reload_app`/`open_dev_menu`, clear data, permissions, deep links, push/pull files
+- **Logs & capture** — one-shot or streaming `logcat` (substring/priority/tag filters), screen recording
 - **Environment & diagnostics** — dark mode, mock location, clean status bar, `doctor`
 - **Gradle build & test** — `assembleDebug`, unit tests, instrumented tests, task discovery
 

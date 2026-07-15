@@ -4,6 +4,29 @@ Shipped work, newest first. Roadmap and open ideas live in
 [BACKLOG.md](BACKLOG.md); the code layout is described in
 [../ARCHITECTURE.md](../ARCHITECTURE.md).
 
+## v0.8.0 — reload_app, open_dev_menu, richer log filtering
+
+From real field feedback (council-hub `android-emulator-mcp-feedback`) on two
+long a partner app/Expo dev-client debugging sessions — the two items flagged as
+costing the most back-and-forth.
+
+- **`reload_app`** — best-effort Metro/JS reload via the classic React Native
+  `<package>.RELOAD_APP_ACTION` broadcast. Live-verified against a real Expo
+  dev client (`com.example.devclient`): the broadcast triggered an actual
+  reload attempt (it surfaced Metro's "couldn't load script" error, since
+  Metro wasn't running in the test — confirming the receiver fired). Not
+  guaranteed on newer bridgeless-mode RN architectures that don't register
+  the receiver; falls back to `open_dev_menu`.
+- **`open_dev_menu`** — opens the RN dev menu via `KEYCODE_MENU`, for driving
+  Reload/Debug JS Remotely/etc. by hand (`tap_on_text`/`describe_ui`) when
+  `reload_app`'s broadcast doesn't apply.
+- **Richer log filtering** — `logcat` and `stop_logcat_capture` gained
+  `priority` (V/D/I/W/E/F, keeps that level and more severe) and `tags`
+  (case-insensitive, OR'd) filters alongside the existing substring filter,
+  cutting down on the 89k–327k-char buffer spills the field feedback
+  reported. Shared, unit-tested filtering logic (`LogFilter`) now backs both
+  tools.
+
 ## v0.7.0 — richer status bar, deeper test-report insight, key-combo presets
 
 - **`set_status_bar` — richer demo controls.** Added `network_type`

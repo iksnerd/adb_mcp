@@ -61,9 +61,11 @@ func StartLogcatCapture(ctx context.Context, serial string, clear bool) error {
 }
 
 // StopLogcatCapture stops the running capture for serial and returns the
-// collected lines, optionally filtered (case-insensitive) and with chatty spam
-// removed.
-func StopLogcatCapture(serial, filter string) (string, error) {
+// collected lines, filtered per f (see LogFilter) with chatty spam removed.
+func StopLogcatCapture(serial string, f LogFilter) (string, error) {
+	if err := f.validate(); err != nil {
+		return "", err
+	}
 	logMu.Lock()
 	s, ok := logSessions[serial]
 	if ok {
@@ -81,18 +83,7 @@ func StopLogcatCapture(serial, filter string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	needle := strings.ToLower(strings.TrimSpace(filter))
-	var kept []string
-	for _, line := range strings.Split(string(data), "\n") {
-		if isChattyNoise(line) {
-			continue
-		}
-		if needle != "" && !strings.Contains(strings.ToLower(line), needle) {
-			continue
-		}
-		kept = append(kept, line)
-	}
-	return strings.TrimRight(strings.Join(kept, "\n"), "\n"), nil
+	return strings.TrimRight(f.apply(string(data)), "\n"), nil
 }
 
 // StopAllCaptures tears down every running logcat/screen-record session,

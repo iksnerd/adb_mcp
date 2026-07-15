@@ -32,7 +32,7 @@ single device is attached; with several, pass one from `list_devices`.
 | `drag` | Press-hold-move-release drag (`draganddrop`) — for drag handles & reorder |
 | `input_text` | Type into the focused field via the IME |
 | `press_key` | Press a named key (`enter`,`back`,`home`,`escape`,…) or raw keycode |
-| `input_key_combo` | Press a chord together, e.g. `["ctrl","a"]`, `["alt","tab"]` |
+| `input_key_combo` | Press a chord together — `keys=["ctrl","a"]` or `preset="select_all"`/`copy`/`paste`/… |
 | `enter_pin` | Enter digits on a PIN pad — with `grid`/`coords` for canvas-drawn pads |
 
 ### Device lock / Keystore
@@ -49,6 +49,8 @@ single device is attached; with several, pass one from `list_devices`.
 | `get_app_details` | Version name/code + launchable activity of an app |
 | `install_app` / `uninstall_app` | Install/reinstall or remove an app |
 | `launch_app` / `stop_app` | Launch the LAUNCHER activity / force-stop |
+| `reload_app` | Best-effort Metro/JS reload via the RN `RELOAD_APP_ACTION` broadcast |
+| `open_dev_menu` | Open the RN dev menu (`KEYCODE_MENU`) when `reload_app` doesn't apply |
 | `clear_app_data` | Wipe data+cache → first-launch state |
 | `grant_permission` / `revoke_permission` | Grant/revoke a runtime permission |
 | `open_url` | Open a URL or deep link (ACTION_VIEW) |
@@ -57,8 +59,8 @@ single device is attached; with several, pass one from `list_devices`.
 ### Logs & capture
 | Tool | Purpose |
 |---|---|
-| `logcat` | One-shot dump of recent log lines, filterable — find the native `Caused by:` |
-| `start_logcat_capture` / `stop_logcat_capture` | Stream logs across a flow, then return them |
+| `logcat` | One-shot dump of recent log lines, filterable by substring/`priority`/`tags` — find the native `Caused by:` |
+| `start_logcat_capture` / `stop_logcat_capture` | Stream logs across a flow, then return them (same substring/`priority`/`tags` filters on stop) |
 | `start_screen_record` / `stop_screen_record` | Record the screen to mp4 and pull it |
 
 ### Environment & diagnostics
@@ -66,14 +68,14 @@ single device is attached; with several, pass one from `list_devices`.
 |---|---|
 | `set_dark_mode` | Toggle the system dark theme |
 | `set_location` | Set the mock GPS location |
-| `set_status_bar` | Pin a clean status bar (SystemUI demo mode) for tidy screenshots |
+| `set_status_bar` | Pin a clean status bar (SystemUI demo mode) — clock/battery/mobile signal+carrier+data-type/notifications — for tidy screenshots |
 | `doctor` | Report SDK/adb/emulator/AVD/device health |
 
 ### Build & test (Gradle)
 | Tool | Purpose |
 |---|---|
 | `gradle_build` | `./gradlew assembleDebug` (or a given task) → APK path |
-| `run_unit_tests` | `./gradlew test` → structured pass/fail/skip summary + failing tests |
+| `run_unit_tests` | `./gradlew test` → pass/fail/skip summary, per-suite timing, failure stack traces; `json=true` for structured output |
 | `run_instrumented_tests` | `./gradlew connectedAndroidTest` (needs a device) → same summary |
 | `list_gradle_tasks` | Discover available Gradle tasks |
 

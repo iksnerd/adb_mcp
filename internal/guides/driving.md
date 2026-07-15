@@ -47,6 +47,17 @@ know the label of what you want to press.
   Fast-Refresh aren't instant.
 - **`describe_ui` can transiently fail mid-animation** ("could not get idle
   state"). This tool already retries once; if it still fails, wait and call again.
+- **`screenshot` and `describe_ui` can briefly disagree during a transition.**
+  Mid-navigation (an app backgrounding, a dev-launcher hand-off) a `screenshot`
+  may show one screen while a `describe_ui` a moment later returns a different
+  tree — a timing race, not a bug. Let the screen settle (short wait, re-take)
+  before trusting the two together.
+- **A black `screenshot` isn't always a black screen.** `screenshot` retries an
+  all-black frame automatically and, if it stays black, tells you why in the
+  caption: a `FLAG_SECURE` window (e.g. a native PIN pad the OS blanks) or a
+  sleeping display. Either way, **fall back to `describe_ui`** — it reads the
+  hierarchy even when the pixels are blanked. Don't send a wake key on a black
+  frame unless the caption says the screen is off.
 
 ## When describe_ui can't see the element (RN / Flutter / Skia)
 

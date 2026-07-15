@@ -38,6 +38,11 @@ type openURLArgs struct {
 	Package string `json:"package,omitempty" jsonschema:"Optional package to target the intent at."`
 }
 
+type lastCrashArgs struct {
+	serialArg
+	Package string `json:"package,omitempty" jsonschema:"Optional package name to filter to (e.g. com.example.app); omit for the most recent crash from any app."`
+}
+
 type pushArgs struct {
 	serialArg
 	LocalPath  string `json:"local_path" jsonschema:"Local file to copy onto the device."`
@@ -84,8 +89,12 @@ func launchApp(ctx context.Context, in packageArg) (*mcp.CallToolResult, error) 
 	if err != nil {
 		return nil, err
 	}
-	if err := android.LaunchApp(ctx, serial, in.Package); err != nil {
+	component, err := android.LaunchApp(ctx, serial, in.Package)
+	if err != nil {
 		return nil, err
+	}
+	if component != "" {
+		return text("Launched %s (%s).", in.Package, component), nil
 	}
 	return text("Launched %s.", in.Package), nil
 }
@@ -179,6 +188,24 @@ func openURL(ctx context.Context, in openURLArgs) (*mcp.CallToolResult, error) {
 		return nil, err
 	}
 	return text("Opened %s.\n%s", in.URL, strings.TrimSpace(out)), nil
+}
+
+func lastCrash(ctx context.Context, in lastCrashArgs) (*mcp.CallToolResult, error) {
+	serial, err := resolve(ctx, in.Serial)
+	if err != nil {
+		return nil, err
+	}
+	crash, found, err := android.LastCrash(ctx, serial, in.Package)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		if in.Package != "" {
+			return text("(no recent crash for %s in the DropBox — it may not have crashed, or the entry rotated out)", in.Package), nil
+		}
+		return text("(no recent app crash in the DropBox)"), nil
+	}
+	return text("%s", crash), nil
 }
 
 func getAppDetails(ctx context.Context, in packageArg) (*mcp.CallToolResult, error) {

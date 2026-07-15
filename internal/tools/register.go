@@ -98,7 +98,7 @@ func Register(s *mcp.Server) {
 		"Begin streaming logcat into a buffer for this device (optionally clearing first). Pair with stop_logcat_capture to get everything logged DURING a flow — use this instead of the one-shot 'logcat' when you need logs across an interaction.",
 		startLogcatCapture)
 	add(s, "stop_logcat_capture",
-		"Stop the running logcat capture and return everything collected since start, optionally filtered by a case-insensitive substring, a minimum priority (V/D/I/W/E/F), and/or tags (OR'd) — use these to narrow a long capture instead of spilling the whole buffer.",
+		"Stop the running logcat capture and return what was collected since start, optionally filtered by a case-insensitive substring, a minimum priority (V/D/I/W/E/F), and/or tags (OR'd). Output is capped to the last 500 lines by default (override with tail) so a long capture doesn't blow the token budget — narrow with the filters first.",
 		stopLogcatCapture)
 	add(s, "start_screen_record",
 		"Start recording the screen to an mp4 on the device (Android caps a single recording at ~180s). Pair with stop_screen_record.",
@@ -115,7 +115,7 @@ func Register(s *mcp.Server) {
 		"Install (or reinstall, -r) an APK from a local file path onto the device. Use to deploy a build you want to test.",
 		installApp)
 	add(s, "launch_app",
-		"Launch an app by package name (starts its LAUNCHER activity). Combine with stop_app to restart an app cleanly from a known state.",
+		"Launch an app by package name (starts its LAUNCHER activity) and echo the resolved component on success. Fails with a clear message (not a raw monkey dump) when the package isn't installed or has no launcher activity. Combine with stop_app to restart an app cleanly from a known state.",
 		launchApp)
 	add(s, "stop_app",
 		"Force-stop an app by package name. Pair with launch_app to reset an app to a clean start when reproducing a bug.",
@@ -144,6 +144,9 @@ func Register(s *mcp.Server) {
 	add(s, "get_app_details",
 		"Report an installed app's version name/code and its launchable activity (dumpsys package + resolve-activity) — to confirm what build is installed and find the activity to launch.",
 		getAppDetails)
+	add(s, "last_crash",
+		"Return the most recent app crash from the system DropBox (dumpsys dropbox — JVM/React-Native and native crashes), with the full exception header and stack in one call. Optionally filter to a package. Use this instead of grepping logcat when an app just crashed: DropBox keeps the whole fatal (header + Caused by + frames) together even after it has scrolled out of the logcat ring buffer.",
+		lastCrash)
 	add(s, "push_file",
 		"Copy a local file onto the device (adb push) — e.g. seed test data or a file to import.",
 		pushFile)

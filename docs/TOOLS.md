@@ -48,9 +48,10 @@ single device is attached; with several, pass one from `list_devices`.
 | `list_packages` | List installed packages (filterable) |
 | `get_app_details` | Version name/code + launchable activity of an app |
 | `install_app` / `uninstall_app` | Install/reinstall or remove an app |
-| `launch_app` / `stop_app` | Launch the LAUNCHER activity / force-stop |
+| `launch_app` / `stop_app` | Launch the LAUNCHER activity (echoes the component; clear error if none) / force-stop |
 | `reload_app` | Best-effort Metro/JS reload via the RN `RELOAD_APP_ACTION` broadcast |
 | `open_dev_menu` | Open the RN dev menu (`KEYCODE_MENU`) when `reload_app` doesn't apply |
+| `last_crash` | Most recent app crash from the DropBox (full header + stack, JVM/RN + native) |
 | `clear_app_data` | Wipe data+cache → first-launch state |
 | `grant_permission` / `revoke_permission` | Grant/revoke a runtime permission |
 | `open_url` | Open a URL or deep link (ACTION_VIEW) |
@@ -60,7 +61,7 @@ single device is attached; with several, pass one from `list_devices`.
 | Tool | Purpose |
 |---|---|
 | `logcat` | One-shot dump of recent log lines, filterable by substring/`priority`/`tags` — find the native `Caused by:` |
-| `start_logcat_capture` / `stop_logcat_capture` | Stream logs across a flow, then return them (same substring/`priority`/`tags` filters on stop) |
+| `start_logcat_capture` / `stop_logcat_capture` | Stream logs across a flow, then return them (substring/`priority`/`tags` filters; last 500 lines by default, override with `tail`) |
 | `start_screen_record` / `stop_screen_record` | Record the screen to mp4 and pull it |
 
 ### Environment & diagnostics

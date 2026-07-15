@@ -29,6 +29,7 @@ type stopLogcatArgs struct {
 	Filter   string   `json:"filter,omitempty" jsonschema:"Case-insensitive substring to keep."`
 	Priority string   `json:"priority,omitempty" jsonschema:"Minimum priority to keep: V, D, I, W, E, or F."`
 	Tags     []string `json:"tags,omitempty" jsonschema:"Keep only lines whose log tag contains one of these (case-insensitive, OR'd)."`
+	Tail     int      `json:"tail,omitempty" jsonschema:"Keep only the last N lines after filtering (the most recent, where a crash usually is). Default 500; pass a larger number for more, or a huge one to effectively disable the cap."`
 }
 
 type stopRecordArgs struct {
@@ -48,7 +49,7 @@ func logcat(ctx context.Context, in logcatArgs) (*mcp.CallToolResult, error) {
 		return nil, err
 	}
 	if strings.TrimSpace(out) == "" {
-		return text("(no matching log lines)"), nil
+		return text("(no matching log lines — if you're chasing a crash that already happened, it may have scrolled out of the ring buffer: wrap the repro in start_logcat_capture/stop_logcat_capture, or use last_crash for a fatal that hit the DropBox)"), nil
 	}
 	return text("%s", out), nil
 }
@@ -76,7 +77,11 @@ func stopLogcatCapture(ctx context.Context, in stopLogcatArgs) (*mcp.CallToolRes
 	if strings.TrimSpace(out) == "" {
 		return text("(capture stopped; no matching lines)"), nil
 	}
-	return text("%s", out), nil
+	tail := in.Tail
+	if tail <= 0 {
+		tail = 500 // default cap so a long capture doesn't blow the token budget
+	}
+	return text("%s", tailLines(out, tail)), nil
 }
 
 func startScreenRecord(ctx context.Context, in serialArg) (*mcp.CallToolResult, error) {

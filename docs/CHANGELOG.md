@@ -4,6 +4,27 @@ Shipped work, newest first. Roadmap and open ideas live in
 [BACKLOG.md](BACKLOG.md); the code layout is described in
 [../ARCHITECTURE.md](../ARCHITECTURE.md).
 
+## v0.10.0 — last_crash, bounded capture, clearer launch_app
+
+Clears the rest of the actionable council-hub field feedback.
+
+- **`last_crash`** (new tool) — returns the most recent app crash from the
+  system DropBox (`dumpsys dropbox --print`, JVM/RN and native), full header +
+  stack in one call, optionally filtered to a package. Keeps the whole fatal
+  together even after it's rotated out of the logcat ring buffer. DropBox
+  parsing is pure/unit-tested; live-verified against a real recorded crash.
+- **`stop_logcat_capture` output is bounded by default** — capped to the last
+  500 lines (override with `tail`), so a long capture stops blowing the token
+  budget and force-spilling to a file.
+- **`launch_app` gives a clear failure** — a missing/uninstalled package or
+  no-launcher-activity now returns a plain error instead of a raw `monkey`
+  arg-dump, and on success echoes the resolved component.
+- **`logcat` buffer-rotation hint** — an empty one-shot dump now points at
+  `start_logcat_capture`/`stop_logcat_capture` or `last_crash` for a fatal that
+  already scrolled off.
+- **Driving guide** documents the `screenshot`/`describe_ui` state-skew during
+  transitions and the black-screenshot → `describe_ui` fallback.
+
 ## v0.9.0 — screenshot black-frame detection & diagnosis
 
 From council-hub field feedback: `screenshot` returned a bare black PNG in two

@@ -43,11 +43,28 @@ func UninstallApp(ctx context.Context, serial, pkg string) (string, error) {
 	return runAdb(ctx, serial, "uninstall", pkg)
 }
 
-// LaunchApp starts an app's launcher activity via monkey.
-func LaunchApp(ctx context.Context, serial, pkg string) error {
-	_, err := runAdb(ctx, serial, "shell", "monkey", "-p", pkg,
+// launchComponentRe pulls the resolved component out of monkey's verbose
+// output line: "// Allowing start of Intent { ... cmp=<pkg>/<activity> ... }".
+var launchComponentRe = regexp.MustCompile(`cmp=(\S+)`)
+
+// LaunchApp starts an app's launcher activity via monkey and returns the
+// resolved component on success. monkey exits non-zero and prints "No
+// activities found to run, monkey aborted" when the package isn't installed or
+// has no LAUNCHER activity; that raw arg-dump is unreadable, so surface a clear
+// error instead. component may be "" if monkey didn't echo it.
+func LaunchApp(ctx context.Context, serial, pkg string) (component string, err error) {
+	out, runErr := runAdb(ctx, serial, "shell", "monkey", "-p", pkg, "-v",
 		"-c", "android.intent.category.LAUNCHER", "1")
-	return err
+	if strings.Contains(out, "No activities found to run") || strings.Contains(out, "monkey aborted") {
+		return "", fmt.Errorf("cannot launch %s: no launchable activity (is the package installed, and does it have a LAUNCHER activity? check list_packages / get_app_details)", pkg)
+	}
+	if runErr != nil {
+		return "", runErr
+	}
+	if m := launchComponentRe.FindStringSubmatch(out); m != nil {
+		component = m[1]
+	}
+	return component, nil
 }
 
 // StopApp force-stops an app.

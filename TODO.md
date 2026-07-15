@@ -20,6 +20,8 @@ Core parity with [XcodeBuildMCP](https://github.com/getsentry/XcodeBuildMCP) rea
 Pulled from [docs/BACKLOG.md](docs/BACKLOG.md) — see there for full context.
 
 **Field feedback** (from real a partner app debugging sessions — see BACKLOG.md)
+- [ ] `screenshot` should signal WHY a capture is black (intermittent retry / `FLAG_SECURE`) + status field
+- [ ] `last_crash` — pull `dumpsys dropbox` so a full crash stack comes back in one call
 - [ ] Bound `stop_logcat_capture` output by default (tail cap or summary+file)
 - [ ] Clearer `launch_app` failure output + dev-client (Expo Dev Launcher) awareness
 - [ ] `logcat` buffer-rotation hint; `screenshot`/`describe_ui` state-skew note

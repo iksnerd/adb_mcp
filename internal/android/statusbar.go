@@ -39,6 +39,28 @@ type StatusBarOptions struct {
 	NotificationIcon string
 }
 
+// validate checks every field up front so StatusBarDemo can reject a bad
+// request before it sends any broadcast — otherwise an invalid later field
+// (e.g. network_type) would leave the bar partway configured (demo entered,
+// clock/battery already set).
+func (opts StatusBarOptions) validate() error {
+	if opts.Clock != "" && (len(opts.Clock) != 4 || !isAllDigits(opts.Clock)) {
+		return fmt.Errorf("clock must be 4 digits HHMM (e.g. \"0930\"), got %q", opts.Clock)
+	}
+	if opts.Battery != nil && (*opts.Battery < 0 || *opts.Battery > 100) {
+		return fmt.Errorf("battery must be 0-100, got %d", *opts.Battery)
+	}
+	if opts.MobileLevel != nil && (*opts.MobileLevel < 0 || *opts.MobileLevel > 4) {
+		return fmt.Errorf("mobile_level must be 0-4, got %d", *opts.MobileLevel)
+	}
+	switch opts.NetworkType {
+	case "", "wifi", "mobile", "none":
+	default:
+		return fmt.Errorf("network_type must be \"wifi\", \"mobile\", or \"none\", got %q", opts.NetworkType)
+	}
+	return nil
+}
+
 // StatusBarDemo drives SystemUI "demo mode", which pins a clean, deterministic
 // status bar — fixed clock, chosen signal/battery, no notification icons by
 // default — so screenshots for docs don't leak the wall clock or a random
@@ -48,6 +70,11 @@ type StatusBarOptions struct {
 // Requires the demo-mode broadcast to be allowed, which this enables first
 // (settings global sysui_demo_allowed=1).
 func StatusBarDemo(ctx context.Context, serial string, enter bool, opts StatusBarOptions) error {
+	if enter {
+		if err := opts.validate(); err != nil {
+			return err
+		}
+	}
 	if _, err := runAdb(ctx, serial, "shell", "settings", "put", "global", "sysui_demo_allowed", "1"); err != nil {
 		return err
 	}
@@ -58,23 +85,14 @@ func StatusBarDemo(ctx context.Context, serial string, enter bool, opts StatusBa
 		return err
 	}
 	if opts.Clock != "" {
-		if len(opts.Clock) != 4 || !isAllDigits(opts.Clock) {
-			return fmt.Errorf("clock must be 4 digits HHMM (e.g. \"0930\"), got %q", opts.Clock)
-		}
 		if err := demoBroadcast(ctx, serial, "clock", "hhmm", opts.Clock); err != nil {
 			return err
 		}
 	}
 	if opts.Battery != nil {
-		if *opts.Battery < 0 || *opts.Battery > 100 {
-			return fmt.Errorf("battery must be 0-100, got %d", *opts.Battery)
-		}
 		if err := demoBroadcast(ctx, serial, "battery", "level", strconv.Itoa(*opts.Battery), "plugged", "false"); err != nil {
 			return err
 		}
-	}
-	if opts.MobileLevel != nil && (*opts.MobileLevel < 0 || *opts.MobileLevel > 4) {
-		return fmt.Errorf("mobile_level must be 0-4, got %d", *opts.MobileLevel)
 	}
 	if err := networkBroadcast(ctx, serial, opts); err != nil {
 		return err

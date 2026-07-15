@@ -10,6 +10,10 @@ import (
 
 // Logcat dumps the last `lines` log lines (adb logcat -d -t) and applies
 // LogFilter (substring/priority/tags), dropping chatty spam.
+//
+// The format is pinned to `threadtime` (rather than the device default) so
+// LogFilter's per-line priority/tag parsing is deterministic across devices —
+// logLineRe expects the "… PID TID PRIO TAG:" shape threadtime produces.
 func Logcat(ctx context.Context, serial string, lines int, f LogFilter) (string, error) {
 	if lines <= 0 {
 		lines = 400
@@ -17,7 +21,7 @@ func Logcat(ctx context.Context, serial string, lines int, f LogFilter) (string,
 	if err := f.validate(); err != nil {
 		return "", err
 	}
-	out, err := runAdb(ctx, serial, "logcat", "-d", "-t", strconv.Itoa(lines))
+	out, err := runAdb(ctx, serial, "logcat", "-d", "-v", "threadtime", "-t", strconv.Itoa(lines))
 	if err != nil {
 		return "", err
 	}
@@ -44,9 +48,10 @@ type LogFilter struct {
 // more severe.
 var priorityRank = map[string]int{"V": 0, "D": 1, "I": 2, "W": 3, "E": 4, "F": 5}
 
-// logLineRe matches the `-v time` / default dump header:
+// logLineRe matches a `threadtime`-format logcat header:
 // "MM-DD HH:MM:SS.mmm  PID  TID X TAG   : message" — capturing the priority
-// letter and tag (padding around the tag is trimmed by the caller).
+// letter and tag (padding around the tag is trimmed by the caller). Both
+// Logcat and StartLogcatCapture pin -v threadtime so this parse is reliable.
 var logLineRe = regexp.MustCompile(`^\S+\s+\S+\s+\d+\s+\d+\s+([VDIWEF])\s+([^:]*):`)
 
 func (f LogFilter) validate() error {

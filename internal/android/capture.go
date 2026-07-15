@@ -45,7 +45,9 @@ func StartLogcatCapture(ctx context.Context, serial string, clear bool) error {
 	if serial != "" {
 		args = append(args, "-s", serial)
 	}
-	args = append(args, "logcat", "-v", "time")
+	// threadtime (not "time") so StopLogcatCapture's LogFilter can parse each
+	// line's priority/tag — logLineRe expects the "… PID TID PRIO TAG:" shape.
+	args = append(args, "logcat", "-v", "threadtime")
 	cmd := exec.Command(adbPath(), args...)
 	cmd.Env = commandEnv()
 	cmd.Stdout = f
